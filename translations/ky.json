@@ -1,0 +1,88 @@
+{
+    "common": {
+        "fleetbase": "Fleetbase",
+        "navigator": "max.kg",
+        "apiKey": "API ачкычы",
+        "cancel": "Жокко чыгаруу",
+        "new": "Жаңы",
+        "create": "Түзүү",
+        "save": "Сактоо",
+        "delete": "Өчүрүү",
+        "edit": "Түзөтүү",
+        "update": "Жаңылоо",
+        "service": "Кызмат",
+        "retry": "Кайталап көрүү",
+        "loading": "Жүктөлүүдө...",
+        "confirm": "Ырастоо",
+        "confirmation": "Ырастоо",
+        "ok": "Макул",
+        "done": "Даяр",
+        "tryAgain": "Дагы бир жолу аракет кылуу"
+    },
+    "orderStatuses": {
+        "created": "Түзүлдү",
+        "preparing": "Даярдалып жатат",
+        "dispatched": "Жөнөтүлдү",
+        "driver_enroute": "Айдоочу жолдо",
+        "pending": "Күтүүдө",
+        "in_progress": "Аткарылууда",
+        "completed": "Аяктады"
+    },
+    "BootScreen": {
+        "missingRequiredConfigurationKeys": "Милдеттүү конфигурация ачкычтары жок"
+    },
+    "AccountScreen": {
+        "changeProfilePhotoOptions": {
+            "takePhoto": "Сүрөткө тартуу",
+            "photoLibrary": "Галереядан тандоо",
+            "deleteProfilePhoto": "Профиль сүрөтүн өчүрүү"
+        },
+        "profilePhoto": "Профиль сүрөтү",
+        "email": "Email",
+        "phoneNumber": "Телефон номери",
+        "name": "Аты",
+        "language": "Тил",
+        "theme": "Тема",
+        "deleteAccount": "Аккаунтту өчүрүү",
+        "termsOfService": "Колдонуу шарттары",
+        "privacyPolicy": "Купуялык саясаты",
+        "tracking": "Көзөмөлдөө",
+        "account": "Аккаунт",
+        "dataProtection": "Маалыматты коргоо",
+        "clearCache": "Кэшти тазалоо",
+        "signOut": "Чыгуу",
+        "signedOut": "Сиз аккаунттан чыктыңыз.",
+        "cacheCleared": "Кэш тазаланды.",
+        "schemeChanged": "Эми {{selectedScheme}} режими колдонулат.",
+        "languageChanged": "Эми {{selectedLanguage}} тили колдонулат.",
+        "photoChanged": "Профиль сүрөтү өзгөртүлдү.",
+        "photoRemoved": "Профиль сүрөтү өчүрүлдү."
+    },
+    "ProfileScreen": {
+        "organizationChanged": "{{selectedOrganization}} уюмуна алмаштырылды."
+    },
+    "AddNewLocationScreen": {
+        "addNewAddress": "Жаңы дарек кошуу",
+        "streetName": "Көчө жана үй номери",
+        "weThinkYoureAroundHere": "Сиз ушул жакта окшойсуз",
+        "cantFindYourAddress": "Дарегиңизди таба албай жатасызбы?",
+        "useMapInstead": "Анын ордуна картаны колдонуңуз"
+    },
+    "SetupWarningScreen": {
+        "configurationMissing": "Конфигурациялар жетишпейт!",
+        "unconfiguredApp": "Тиркеме толук туура конфигурацияланган эмес окшойт.",
+        "envMissing": "айлана-чөйрө өзгөрмөлөрүндө жок!"
+    },
+    "DriverReportScreen": {},
+    "LocationPermissionScreen": {
+        "enableLocationServices": "Жайгашкан жер кызматтарын күйгүзүңүз",
+        "enableLocationPrompt": "Реалдуу убакыттагы көзөмөл жана жаңыртуулар үчүн жайгашкан жериңиз керек. Улантуу үчүн уруксат бериңиз.",
+        "shareAndContinue": "Бөлүшүү жана улантуу",
+        "permissionNeededTitle": "Жайгашкан жерге уруксат керек",
+        "enableInSettingsTitle": "Жайгашкан жерди жөндөөлөрдөн күйгүзүңүз",
+        "permissionDeniedPrompt": "Жайгашкан жерге уруксатсыз айрым функциялар иштебейт. Азыр уруксат бересизби?",
+        "locationBlockedPrompt": "Жайгашкан жерге жетүү бөгөттөлгөн. Улантуу үчүн Жөндөөлөргө кирип, күйгүзүңүз.",
+        "goToSettings": "Жөндөөлөргө өтүү",
+        "skipForNow": "Азырынча өткөрүп жиберүү"
+    }
+}

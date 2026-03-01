@@ -3,12 +3,14 @@ import { getString } from '../utils/storage';
 import { get, navigatorConfig } from '../utils';
 import en from '../../translations/en.json';
 import ru from '../../translations/ru.json';
+import ky from '../../translations/ky.json';
 // import mn from '../../translations/mn.json';
 import I18n from 'react-native-i18n';
 
 export const translations = {
     en,
     ru,
+    ky,
     // mn,
 };
 
