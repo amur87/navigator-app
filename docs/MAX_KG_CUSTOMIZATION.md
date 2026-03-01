@@ -98,3 +98,16 @@ FLEETBASE_HOST=https://delivery.max.kg
 - fallback в `src/contexts/ConfigContext.tsx`
 
 Это означает, что даже без явного `FLEETBASE_HOST` в `.env`, приложение попробует подключиться к `https://delivery.max.kg`.
+
+
+## 9) Централизованная конфигурация `fleetbase.config.json`
+
+Добавлен файл `fleetbase.config.json` в корне проекта.
+
+Теперь helper `config()` читает значения в таком порядке:
+1. переменные окружения (`.env` / `react-native-config`)
+2. `fleetbase.config.json`
+3. fallback из кода
+
+Это позволяет сразу зафиксировать дефолты для `max.kg` в одном месте
+(например `FLEETBASE_HOST`, `APP_NAME`, `DEFAULT_LOCALE`).

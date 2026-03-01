@@ -1,0 +1,9 @@
+{
+    "APP_NAME": "max.kg",
+    "APP_IDENTIFIER": "kg.max.delivery",
+    "APP_LINK_PREFIX": "maxkg",
+    "FLEETBASE_HOST": "https://delivery.max.kg",
+    "DEFAULT_LOCALE": "ru",
+    "availableLocales": ["ru", "en"],
+    "defaultLocale": "ru"
+}
