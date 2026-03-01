@@ -1,0 +1,88 @@
+{
+    "common": {
+        "fleetbase": "Fleetbase",
+        "navigator": "max.kg",
+        "apiKey": "API-ключ",
+        "cancel": "Отмена",
+        "new": "Новый",
+        "create": "Создать",
+        "save": "Сохранить",
+        "delete": "Удалить",
+        "edit": "Редактировать",
+        "update": "Обновить",
+        "service": "Сервис",
+        "retry": "Повторить",
+        "loading": "Загрузка...",
+        "confirm": "Подтвердить",
+        "confirmation": "Подтверждение",
+        "ok": "ОК",
+        "done": "Готово",
+        "tryAgain": "Попробовать снова"
+    },
+    "orderStatuses": {
+        "created": "Создан",
+        "preparing": "Подготавливается",
+        "dispatched": "Отправлен",
+        "driver_enroute": "Водитель в пути",
+        "pending": "В ожидании",
+        "in_progress": "В процессе",
+        "completed": "Завершен"
+    },
+    "BootScreen": {
+        "missingRequiredConfigurationKeys": "Отсутствуют обязательные ключи конфигурации"
+    },
+    "AccountScreen": {
+        "changeProfilePhotoOptions": {
+            "takePhoto": "Сделать фото",
+            "photoLibrary": "Выбрать из галереи",
+            "deleteProfilePhoto": "Удалить фото профиля"
+        },
+        "profilePhoto": "Фото профиля",
+        "email": "Email",
+        "phoneNumber": "Номер телефона",
+        "name": "Имя",
+        "language": "Язык",
+        "theme": "Тема",
+        "deleteAccount": "Удалить аккаунт",
+        "termsOfService": "Условия использования",
+        "privacyPolicy": "Политика конфиденциальности",
+        "tracking": "Отслеживание",
+        "account": "Аккаунт",
+        "dataProtection": "Защита данных",
+        "clearCache": "Очистить кэш",
+        "signOut": "Выйти",
+        "signedOut": "Вы вышли из аккаунта.",
+        "cacheCleared": "Кэш очищен.",
+        "schemeChanged": "Теперь используется режим {{selectedScheme}}.",
+        "languageChanged": "Теперь используется язык: {{selectedLanguage}}.",
+        "photoChanged": "Фото профиля изменено.",
+        "photoRemoved": "Фото профиля удалено."
+    },
+    "ProfileScreen": {
+        "organizationChanged": "Переключено на организацию {{selectedOrganization}}."
+    },
+    "AddNewLocationScreen": {
+        "addNewAddress": "Добавить новый адрес",
+        "streetName": "Улица и номер дома",
+        "weThinkYoureAroundHere": "Похоже, вы где-то рядом",
+        "cantFindYourAddress": "Не можете найти свой адрес?",
+        "useMapInstead": "Используйте карту вместо этого"
+    },
+    "SetupWarningScreen": {
+        "configurationMissing": "Отсутствуют настройки!",
+        "unconfiguredApp": "Похоже, приложение настроено не полностью.",
+        "envMissing": "отсутствует в переменных окружения!"
+    },
+    "DriverReportScreen": {},
+    "LocationPermissionScreen": {
+        "enableLocationServices": "Включите службы геолокации",
+        "enableLocationPrompt": "Нам нужен доступ к вашему местоположению для отслеживания и обновлений в реальном времени. Разрешите доступ, чтобы продолжить.",
+        "shareAndContinue": "Поделиться и продолжить",
+        "permissionNeededTitle": "Требуется доступ к геолокации",
+        "enableInSettingsTitle": "Включите геолокацию в настройках",
+        "permissionDeniedPrompt": "Без доступа к геолокации некоторые функции не будут работать. Разрешить доступ сейчас?",
+        "locationBlockedPrompt": "Доступ к геолокации заблокирован. Откройте настройки и включите его, чтобы продолжить.",
+        "goToSettings": "Перейти в настройки",
+        "skipForNow": "Пропустить"
+    }
+}

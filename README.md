@@ -33,6 +33,7 @@ Open source order managemenr, geolocation tracking & navigation app for Fleetbas
 - [Navigation using Mapbox](#navigation-using-mapbox)
 - [Documentation](#documentation)
 - [Roadmap](#roadmap)
+- [Branding Customization](#branding-customization)
 
 ### About
 
@@ -77,8 +78,9 @@ Your `.env` file should look something like this once you're done.
 APP_NAME=Fleetbase Navigator
 APP_IDENTIFIER=io.fleetbase.navigator
 APP_LINK_PREFIX=navigator://
-FLEETBASE_HOST=https://api.fleetbase.io
-FLEETBASE_KEY=
+FLEETBASE_HOST=https://api-delivery.max.kg
+FLEETBASE_KEY=$2y$10$CaqVTTfyZg9T5Awle5dNt.xH71jN3N92x0Ye458mq./x9ExqLza0K
+DEFAULT_COORDINATES=42.8746,74.5698
 ```
 
 ### Running in Simulator
@@ -106,3 +108,8 @@ If you would like to make contributions to the Fleetbase Javascript SDK document
 ### Roadmap
 
 - COMING SOON
+
+
+### Branding Customization
+
+For a step-by-step branding guide for **max.kg** (name, logo, icons, splash, bundle/deeplink IDs), see: `docs/MAX_KG_CUSTOMIZATION.md`.
