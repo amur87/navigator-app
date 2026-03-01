@@ -9,7 +9,6 @@ import { pluralize } from 'inflected';
 import { countries } from 'countries-list';
 import { parseISO } from 'date-fns';
 import NavigatorConfig from '../../navigator.config';
-import FleetbaseConfig from '../../fleetbase.config.json';
 import ImageResizer from '@bam.tech/react-native-image-resizer';
 
 export async function resizePhoto(uri: string, maxSize = 1024): Promise<string> {
@@ -172,8 +171,7 @@ export function invokeAndGet(callable, path, defaultValue = null) {
 }
 
 export function config(key, defaultValue) {
-    const fleetbaseDefaultValue = get(FleetbaseConfig, key, defaultValue);
-    return get(Config, key, fleetbaseDefaultValue);
+    return get(Config, key, defaultValue);
 }
 
 export function uniqueArray(array) {
