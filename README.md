@@ -33,6 +33,7 @@ Open source order managemenr, geolocation tracking & navigation app for Fleetbas
 - [Navigation using Mapbox](#navigation-using-mapbox)
 - [Documentation](#documentation)
 - [Roadmap](#roadmap)
+- [Branding Customization](#branding-customization)
 
 ### About
 
@@ -106,3 +107,8 @@ If you would like to make contributions to the Fleetbase Javascript SDK document
 ### Roadmap
 
 - COMING SOON
+
+
+### Branding Customization
+
+For a step-by-step branding guide for **max.kg** (name, logo, icons, splash, bundle/deeplink IDs), see: `docs/MAX_KG_CUSTOMIZATION.md`.

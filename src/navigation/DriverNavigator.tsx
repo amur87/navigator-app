@@ -53,6 +53,7 @@ import Badge from '../components/Badge';
 import DeviceInfo from 'react-native-device-info';
 
 const isAndroid = Platform.OS === 'android';
+const appDisplayName = config('APP_NAME', 'max.kg');
 const importedIconsMap = {
     faHome,
     faGaugeHigh,
@@ -180,7 +181,7 @@ function getDriverNavigatorHeaderOptions({ route, navigation }) {
         headerTitle: '',
         headerLeft: (props) => (
             <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
-                Navigator
+                {appDisplayName}
             </Text>
         ),
         headerRight: (props) => <DriverOnlineToggle {...props} />,
@@ -511,7 +512,7 @@ const DriverNavigator = createBottomTabNavigator({
                     <XStack alignItems='center'>
                         <Image source={require('../../assets/navigator-icon-transparent.png')} style={{ width: 18, height: 18, marginRight: 5 }} />
                         <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
-                            Navigator
+                            {appDisplayName}
                         </Text>
                     </XStack>
                     <Text color='$textSecondary' fontSize={8} ml={25}>
