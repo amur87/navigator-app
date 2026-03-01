@@ -62,7 +62,7 @@ export const ConfigProvider = ({ children }: { children: ReactNode }) => {
     const resolveConnectionConfig = useCallback(
         (key, defaultValue = null) => {
             const fullConfig = {
-                FLEETBASE_HOST: instanceLinkedFleetbaseHost ?? config('FLEETBASE_HOST', 'https://delivery.max.kg'),
+                FLEETBASE_HOST: instanceLinkedFleetbaseHost ?? config('FLEETBASE_HOST', 'https://api-delivery.max.kg'),
                 FLEETBASE_KEY: instanceLinkedFleetbaseKey ?? config('FLEETBASE_KEY'),
                 SOCKETCLUSTER_HOST: instanceLinkedSocketclusterHost ?? config('SOCKETCLUSTER_HOST', 'socket.fleetbase.io'),
                 SOCKETCLUSTER_PORT: parseInt(instanceLinkedSocketclusterPort ?? config('SOCKETCLUSTER_PORT', '8000')),

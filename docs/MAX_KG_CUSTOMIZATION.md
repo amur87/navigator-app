@@ -90,11 +90,11 @@ APP_LINK_PREFIX=maxkg
 В проекте дефолтный сервер уже выставлен на:
 
 ```env
-FLEETBASE_HOST=https://delivery.max.kg
+FLEETBASE_HOST=https://api-delivery.max.kg
 ```
 
 Источник:
 - `.env.example`
 - fallback в `src/contexts/ConfigContext.tsx`
 
-Это означает, что даже без явного `FLEETBASE_HOST` в `.env`, приложение попробует подключиться к `https://delivery.max.kg`.
+Это означает, что даже без явного `FLEETBASE_HOST` в `.env`, приложение попробует подключиться к `https://api-delivery.max.kg`.

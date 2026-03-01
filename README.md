@@ -78,7 +78,7 @@ Your `.env` file should look something like this once you're done.
 APP_NAME=Fleetbase Navigator
 APP_IDENTIFIER=io.fleetbase.navigator
 APP_LINK_PREFIX=navigator://
-FLEETBASE_HOST=https://delivery.max.kg
+FLEETBASE_HOST=https://api-delivery.max.kg
 FLEETBASE_KEY=$2y$10$CaqVTTfyZg9T5Awle5dNt.xH71jN3N92x0Ye458mq./x9ExqLza0K
 DEFAULT_COORDINATES=42.8746,74.5698
 ```
