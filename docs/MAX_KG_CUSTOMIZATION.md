@@ -83,3 +83,18 @@ APP_LINK_PREFIX=maxkg
 ---
 
 Если нужно, следующим шагом могу сделать отдельный `max.kg` логотип в шапке через новый файл (`assets/maxkg-logo.png`) и подключить его вместо текущего.
+
+
+## 8) Сервер подключения по умолчанию
+
+В проекте дефолтный сервер уже выставлен на:
+
+```env
+FLEETBASE_HOST=https://delivery.max.kg
+```
+
+Источник:
+- `.env.example`
+- fallback в `src/contexts/ConfigContext.tsx`
+
+Это означает, что даже без явного `FLEETBASE_HOST` в `.env`, приложение попробует подключиться к `https://delivery.max.kg`.

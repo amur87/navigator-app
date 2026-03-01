@@ -78,7 +78,7 @@ Your `.env` file should look something like this once you're done.
 APP_NAME=Fleetbase Navigator
 APP_IDENTIFIER=io.fleetbase.navigator
 APP_LINK_PREFIX=navigator://
-FLEETBASE_HOST=https://api.fleetbase.io
+FLEETBASE_HOST=https://delivery.max.kg
 FLEETBASE_KEY=
 ```
 
