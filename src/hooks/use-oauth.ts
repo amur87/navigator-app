@@ -161,7 +161,9 @@ const useOAuth = () => {
         }
 
         if (provider === 'facebook') {
-            return typeof config('FACEBOOK_APP_ID') === 'string' && typeof config('FACEBOOK_CLIENT_TOKEN') === 'string';
+            const facebookAppId = config('FACEBOOK_APP_ID');
+            const facebookClientToken = config('FACEBOOK_CLIENT_TOKEN');
+            return typeof facebookAppId === 'string' && facebookAppId.length > 0 && typeof facebookClientToken === 'string' && facebookClientToken.length > 0;
         }
     };
 

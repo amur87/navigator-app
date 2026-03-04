@@ -169,9 +169,9 @@ const ChatChannelScreen = ({ route }) => {
             <XStack bg='$background' alignItems='center' justifyContent='space-between' borderBottomWidth={1} borderColor='$borderColor' px='$3' py='$4' width='100%'>
                 <XStack flex={1} alignItems='center'>
                     <YStack mr='$3'>
-                        <Button onPress={handleExitChatChannel} bg='$surface' size='$3' circular>
+                        <Button onPress={handleExitChatChannel} bg='$primary' borderWidth={1} borderColor='$primaryBorder' size='$3' circular>
                             <Button.Icon>
-                                <FontAwesomeIcon icon={faChevronLeft} color={theme.textPrimary.val} size={16} />
+                                <FontAwesomeIcon icon={faChevronLeft} color={theme.primaryText.val} size={16} />
                             </Button.Icon>
                         </Button>
                     </YStack>

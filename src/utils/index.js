@@ -1,4 +1,4 @@
-import Config from 'react-native-config';
+import EnvConfig from './env-config';
 import { Platform, ActionSheetIOS, Alert, Dimensions } from 'react-native';
 import { Collection, lookup } from '@fleetbase/sdk';
 import storage, { getString } from './storage';
@@ -171,7 +171,7 @@ export function invokeAndGet(callable, path, defaultValue = null) {
 }
 
 export function config(key, defaultValue) {
-    return get(Config, key, defaultValue);
+    return get(EnvConfig, key, defaultValue);
 }
 
 export function uniqueArray(array) {

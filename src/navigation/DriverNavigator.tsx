@@ -17,8 +17,8 @@ import {
     faFlag,
     faTimes,
 } from '@fortawesome/free-solid-svg-icons';
-import { useTheme, Text, View, XStack, Image } from 'tamagui';
-import { navigatorConfig, get, config, toArray, getTheme } from '../utils';
+import { Text, View, XStack, Image } from 'tamagui';
+import { navigatorConfig, get, config, toArray } from '../utils';
 import { configCase } from '../utils/format';
 import { format } from 'date-fns';
 import { PortalHost } from '@gorhom/portal';
@@ -42,18 +42,27 @@ import ChatParticipantsScreen from '../screens/ChatParticipantsScreen';
 import CreateChatChannelScreen from '../screens/CreateChatChannelScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
 import DriverAccountScreen from '../screens/DriverAccountScreen';
+import EditAccountPropertyScreen from '../screens/EditAccountPropertyScreen';
 import { useOrderManager } from '../contexts/OrderManagerContext';
 import { useChat } from '../contexts/ChatContext';
-import useAppTheme from '../hooks/use-app-theme';
 import DriverLayout from '../layouts/DriverLayout';
+import useAppTheme from '../hooks/use-app-theme';
 import DriverOnlineToggle from '../components/DriverOnlineToggle';
 import BackButton from '../components/BackButton';
 import HeaderButton from '../components/HeaderButton';
 import Badge from '../components/Badge';
 import DeviceInfo from 'react-native-device-info';
+import I18n from 'react-native-i18n';
 
 const isAndroid = Platform.OS === 'android';
 const appDisplayName = config('APP_NAME', 'max.kg');
+const YANDEX_YELLOW = '#FFCC00';
+const YANDEX_BLACK = '#1F1F1F';
+const YANDEX_HEADER_LIGHT = '#F5F5F5';
+const YANDEX_LIGHT_BG = '#F5F5F5';
+const YANDEX_LIGHT_MUTED = '#737373';
+const YANDEX_DARK_BG = '#1F1F1F';
+const YANDEX_DARK_MUTED = '#B8B8B8';
 const importedIconsMap = {
     faHome,
     faGaugeHigh,
@@ -175,19 +184,17 @@ function getDefaultTabIcon(routeName) {
 }
 
 function getDriverNavigatorHeaderOptions({ route, navigation }) {
-    const theme = useTheme();
-
     return {
         headerTitle: '',
         headerLeft: (props) => (
-            <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
+            <Text color={YANDEX_BLACK} fontSize={20} fontWeight='bold'>
                 {appDisplayName}
             </Text>
         ),
         headerRight: (props) => <DriverOnlineToggle {...props} />,
         headerStyle: {
-            backgroundColor: theme.background.val,
-            headerTintColor: theme.borderColor.val,
+            backgroundColor: YANDEX_HEADER_LIGHT,
+            headerTintColor: YANDEX_BLACK,
             elevation: 0,
             shadowOpacity: 0,
             borderBottomWidth: 0,
@@ -243,8 +250,8 @@ const DriverTaskTab = createNativeStackNavigator({
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
                     headerStyle: {
-                        backgroundColor: getTheme('background'),
-                        headerTintColor: getTheme('borderColor'),
+                        backgroundColor: YANDEX_HEADER_LIGHT,
+                        headerTintColor: YANDEX_BLACK,
                     },
                 };
             },
@@ -270,8 +277,8 @@ const DriverTaskTab = createNativeStackNavigator({
                         </XStack>
                     ),
                     headerStyle: {
-                        backgroundColor: getTheme('background'),
-                        headerTintColor: getTheme('borderColor'),
+                        backgroundColor: YANDEX_HEADER_LIGHT,
+                        headerTintColor: YANDEX_BLACK,
                     },
                     presentation: 'modal',
                 };
@@ -306,14 +313,14 @@ const DriverReportTab = createNativeStackNavigator({
                     presentation: 'modal',
                     headerTitle: '',
                     headerLeft: (props) => (
-                        <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
-                            Create a new Fuel Report
-                        </Text>
+                            <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
+                                {I18n.t('DriverNavigator.createFuelReportTitle')}
+                            </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
                     headerStyle: {
-                        backgroundColor: getTheme('background'),
-                        headerTintColor: getTheme('borderColor'),
+                        backgroundColor: YANDEX_HEADER_LIGHT,
+                        headerTintColor: YANDEX_BLACK,
                     },
                 };
             },
@@ -328,14 +335,14 @@ const DriverReportTab = createNativeStackNavigator({
                     presentation: 'modal',
                     headerTitle: '',
                     headerLeft: (props) => (
-                        <Text color='$textPrimary' fontSize={18} fontWeight='bold' numberOfLines={1}>
-                            Edit Fuel Report from {format(new Date(fuelReport.created_at), 'MMM dd, yyyy HH:mm')}
-                        </Text>
+                            <Text color='$textPrimary' fontSize={18} fontWeight='bold' numberOfLines={1}>
+                                {I18n.t('DriverNavigator.editFuelReportFrom', { date: format(new Date(fuelReport.created_at), 'MMM dd, yyyy HH:mm') })}
+                            </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
                     headerStyle: {
-                        backgroundColor: getTheme('background'),
-                        headerTintColor: getTheme('borderColor'),
+                        backgroundColor: YANDEX_HEADER_LIGHT,
+                        headerTintColor: YANDEX_BLACK,
                     },
                 };
             },
@@ -357,8 +364,8 @@ const DriverReportTab = createNativeStackNavigator({
                     ),
                     headerRight: (props) => <PortalHost name='FuelReportScreenHeaderRightPortal' />,
                     headerStyle: {
-                        backgroundColor: getTheme('background'),
-                        headerTintColor: getTheme('borderColor'),
+                        backgroundColor: YANDEX_HEADER_LIGHT,
+                        headerTintColor: YANDEX_BLACK,
                     },
                 };
             },
@@ -370,14 +377,14 @@ const DriverReportTab = createNativeStackNavigator({
                     presentation: 'modal',
                     headerTitle: '',
                     headerLeft: (props) => (
-                        <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
-                            Create a new Issue
-                        </Text>
+                            <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
+                                {I18n.t('DriverNavigator.createIssueTitle')}
+                            </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
                     headerStyle: {
-                        backgroundColor: getTheme('background'),
-                        headerTintColor: getTheme('borderColor'),
+                        backgroundColor: YANDEX_HEADER_LIGHT,
+                        headerTintColor: YANDEX_BLACK,
                     },
                 };
             },
@@ -392,14 +399,14 @@ const DriverReportTab = createNativeStackNavigator({
                     presentation: 'modal',
                     headerTitle: '',
                     headerLeft: (props) => (
-                        <Text color='$textPrimary' fontSize={18} fontWeight='bold' numberOfLines={1}>
-                            Edit Issue from {format(new Date(issue.created_at), 'MMM dd, yyyy HH:mm')}
-                        </Text>
+                            <Text color='$textPrimary' fontSize={18} fontWeight='bold' numberOfLines={1}>
+                                {I18n.t('DriverNavigator.editIssueFrom', { date: format(new Date(issue.created_at), 'MMM dd, yyyy HH:mm') })}
+                            </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
                     headerStyle: {
-                        backgroundColor: getTheme('background'),
-                        headerTintColor: getTheme('borderColor'),
+                        backgroundColor: YANDEX_HEADER_LIGHT,
+                        headerTintColor: YANDEX_BLACK,
                     },
                 };
             },
@@ -421,8 +428,8 @@ const DriverReportTab = createNativeStackNavigator({
                     ),
                     headerRight: (props) => <PortalHost name='IssueScreenHeaderRightPortal' />,
                     headerStyle: {
-                        backgroundColor: getTheme('background'),
-                        headerTintColor: getTheme('borderColor'),
+                        backgroundColor: YANDEX_HEADER_LIGHT,
+                        headerTintColor: YANDEX_BLACK,
                     },
                 };
             },
@@ -471,7 +478,7 @@ const DriverChatTab = createNativeStackNavigator({
 });
 
 const DriverAccountTab = createNativeStackNavigator({
-    initialRouteName: 'DriverProfile',
+    initialRouteName: 'DriverAccount',
     screens: {
         DriverProfile: {
             screen: DriverProfileScreen,
@@ -494,90 +501,30 @@ const DriverAccountTab = createNativeStackNavigator({
                 };
             },
         },
+        EditAccountProperty: {
+            screen: EditAccountPropertyScreen,
+            options: () => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
     },
 });
 
 const DriverNavigator = createBottomTabNavigator({
     layout: DriverLayout,
     screenOptions: ({ route, navigation }) => {
-        const theme = useTheme();
         const { isDarkMode } = useAppTheme();
-        const focusedColor = theme.primary.val;
-        const blurredColor = theme.tabIconBlur.val;
+        const navBg = isDarkMode ? YANDEX_DARK_BG : YANDEX_LIGHT_BG;
+        const textColor = isDarkMode ? '#FFFFFF' : YANDEX_BLACK;
+        const mutedColor = isDarkMode ? YANDEX_DARK_MUTED : YANDEX_LIGHT_MUTED;
+        const focusedColor = YANDEX_YELLOW;
+        const blurredColor = mutedColor;
 
         return {
-            headerTitle: '',
-            headerLeft: (props) => (
-                <View pl='$3'>
-                    <XStack alignItems='center'>
-                        <Image source={require('../../assets/navigator-icon-transparent.png')} style={{ width: 18, height: 18, marginRight: 5 }} />
-                        <Text color='$textPrimary' fontSize={20} fontWeight='bold'>
-                            {appDisplayName}
-                        </Text>
-                    </XStack>
-                    <Text color='$textSecondary' fontSize={8} ml={25}>
-                        v{DeviceInfo.getVersion()} #{DeviceInfo.getBuildNumber()}
-                    </Text>
-                </View>
-            ),
-            headerRight: (props) => (
-                <View pr='$3'>
-                    <DriverOnlineToggle {...props} />
-                </View>
-            ),
-            headerStyle: {
-                backgroundColor: isDarkMode ? theme.background.val : theme.background.val,
-                elevation: 0,
-                shadowOpacity: 0,
-                borderBottomWidth: 0,
-                borderColor: isDarkMode ? 'transparent' : theme['$gray-300'].val,
-            },
-            headerShadowVisible: false,
-            tabBarBackground: () => {
-                if (isAndroid) {
-                    return (
-                        <View
-                            style={[
-                                StyleSheet.absoluteFill,
-                                {
-                                    width: '100%',
-                                    height: '100%',
-                                    backgroundColor: isDarkMode ? theme.background.val : theme['$gray-100'].val,
-                                    borderColor: theme.borderColor.val,
-                                    borderTopWidth: 1,
-                                    borderWidth: 0,
-                                },
-                            ]}
-                        />
-                    );
-                }
-                return (
-                    <View style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
-                        <BlurView tint={isDarkMode ? 'dark' : 'light'} intensity={100} style={StyleSheet.absoluteFill} />
-                    </View>
-                );
-            },
-            tabBarInactiveTintColor: blurredColor,
-            tabBarActiveTintColor: theme.primary.val,
-            tabBarStyle: {
-                backgroundColor: theme.background.val,
-                borderTopWidth: isAndroid ? 0 : 1,
-                borderTopColor: isDarkMode ? theme['$gray-800'].val : theme['$gray-600'].val,
-                position: 'relative',
-                elevation: 0,
-            },
-            tabBarIcon: ({ focused }) => {
-                const icon = getDefaultTabIcon(route.name);
-
-                return <FontAwesomeIcon icon={icon} size={isAndroid ? 18 : 20} color={focused ? focusedColor : blurredColor} />;
-            },
-            tabBarLabelStyle: ({ focused }) => {
-                return {
-                    marginTop: isAndroid ? 4 : 15,
-                    fontSize: isAndroid ? 13 : 15,
-                    fontWeight: focued ? 600 : 300,
-                };
-            },
+            headerShown: false,
+            tabBarStyle: { display: 'none' },
         };
     },
     screens: createTabScreens(),

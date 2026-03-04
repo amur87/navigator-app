@@ -1,20 +1,47 @@
 import { useState, useEffect } from 'react';
 import { Switch, Label, XStack } from 'tamagui';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import useAppTheme from '../hooks/use-app-theme';
 
-const DriverOnlineToggle = ({ showLabel = false, ...props }) => {
+const resolveOnlineStatus = (driverLike, fallback) => {
+    if (!driverLike) {
+        return fallback;
+    }
+
+    if (typeof driverLike.isOnline === 'boolean') {
+        return driverLike.isOnline;
+    }
+
+    if (typeof driverLike.getAttribute === 'function') {
+        const online = driverLike.getAttribute('online');
+        if (typeof online === 'boolean') {
+            return online;
+        }
+    }
+
+    if (typeof driverLike.online === 'boolean') {
+        return driverLike.online;
+    }
+
+    return fallback;
+};
+
+const DriverOnlineToggle = ({ showLabel = false }) => {
     const { isDarkMode } = useAppTheme();
+    const { t } = useLanguage();
     const { isOnline, toggleOnline, isUpdating } = useAuth();
     const [checked, setChecked] = useState(isOnline);
 
-    const onCheckedChange = async (checked) => {
-        setChecked(checked);
+    const onCheckedChange = async (nextChecked) => {
+        setChecked(nextChecked);
 
         try {
-            const { isOnline } = await toggleOnline(checked);
-            setChecked(isOnline);
+            const updatedDriver = await toggleOnline(nextChecked);
+            const nextStatus = resolveOnlineStatus(updatedDriver, nextChecked);
+            setChecked(nextStatus);
         } catch (err) {
+            setChecked(!nextChecked);
             console.warn('Error attempting to change driver online status:', err);
         }
     };
@@ -39,7 +66,7 @@ const DriverOnlineToggle = ({ showLabel = false, ...props }) => {
             </Switch>
             {showLabel === true && (
                 <Label htmlFor='driverOnline' color='$gray-500' size='$2' lineHeight='$4'>
-                    {checked ? 'Online' : 'Offline'}
+                    {checked ? t('DriverDashboard.onlineStatusOn') : t('DriverDashboard.onlineStatusOff')}
                 </Label>
             )}
         </XStack>

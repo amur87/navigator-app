@@ -1,4 +1,4 @@
-import Config from 'react-native-config';
+import EnvConfig from './env-config';
 
 export function parseConfigObjectString(objectString) {
     if (!objectString || typeof objectString !== 'string' || objectString.trim() === '') {
@@ -16,7 +16,7 @@ export function parseConfigObjectString(objectString) {
 }
 
 export function config(key, defaultValue) {
-    const value = Config[key];
+    const value = EnvConfig[key];
     return value === undefined ? defaultValue : value;
 }
 

@@ -14,7 +14,7 @@ const BackButton = ({ ...props }) => {
         }
     };
 
-    return <HeaderButton onPress={handlePress} icon={faArrowLeft} {...props} />;
+    return <HeaderButton onPress={handlePress} icon={faArrowLeft} width={44} height={44} {...props} />;
 };
 
 export default BackButton;

@@ -17,7 +17,15 @@
         "confirmation": "Confirmation",
         "ok": "OK",
         "done": "Done",
-        "tryAgain": "Try Again"
+        "tryAgain": "Try Again",
+        "remove": "Remove",
+        "unselect": "Unselect",
+        "select": "Select",
+        "unavailable": "Unavailable",
+        "error": "Error",
+        "reset": "Reset",
+        "yes": "Yes",
+        "storefront": "Storefront"
     },
     "orderStatuses": {
         "created": "Created",
@@ -56,10 +64,12 @@
         "schemeChanged": "Now using {{selectedScheme}} mode.",
         "languageChanged": "Now using {{selectedLanguage}}.",
         "photoChanged": "Profile photo changed.",
-        "photoRemoved": "Profile photo removed."
+        "photoRemoved": "Profile photo removed.",
+        "propertyChangesSaved": "Changes for \"{{propertyName}}\" are saved."
     },
     "ProfileScreen": {
-        "organizationChanged": "Switched to {{selectedOrganization}} organization."
+        "organizationChanged": "Switched to {{selectedOrganization}} organization.",
+        "noOrganizations": "No organizations found"
     },
     "AddNewLocationScreen": {
         "addNewAddress": "Add new address",
@@ -84,5 +94,194 @@
         "locationBlockedPrompt": "Location access has been blocked. Please open Settings and enable it to continue.",
         "goToSettings": "Go to Settings",
         "skipForNow": "Skip for now"
+    },
+    "Chat": {
+        "removeParticipantConfirmation": "Remove this participant from chat?",
+        "removeParticipant": "Remove participant",
+        "participants": "Participants",
+        "addParticipant": "Add participant",
+        "selectParticipant": "Select participant",
+        "createChannelNameRequired": "Enter channel name",
+        "newChannelCreated": "New chat channel created",
+        "createNewChat": "Create new chat",
+        "channelName": "Channel name",
+        "inputChatChannelNamePlaceholder": "Enter channel name",
+        "selectParticipants": "Select participants"
+    },
+    "Auth": {
+        "LoginScreen": {
+            "invalidPhoneNumber": "Enter a valid phone number",
+            "welcomeTitle": "Welcome to delivery max.",
+            "chooseLanguage": "Choose your preferred app language below",
+            "registerButtonText": "Register"
+        },
+        "CreateAccountScreen": {
+            "title": "Create account",
+            "nameInputPlaceholder": "Enter your name",
+            "sendVerificationCodeButtonText": "Send code",
+            "haveAccountLoginButtonText": "I already have an account",
+            "codeRequiredError": "Enter verification code",
+            "missingPhoneError": "Phone number not found",
+            "awaitingVerificationTitle": "Enter the code sent to {{name}}",
+            "verifyCodeButtonText": "Confirm",
+            "retryButtonText": "Retry"
+        }
+    },
+    "Account": {
+        "AccountScreen": {
+            "organization": "Organization"
+        }
+    },
+    "DriverDashboard": {
+        "onlineStatusOn": "On duty",
+        "onlineStatusOff": "Off duty",
+        "location": "Location",
+        "go": "Go",
+        "activeOrdersOnMap": "Active orders on map",
+        "activeOrders": "Active orders",
+        "speed": "Speed"
+    },
+    "DriverOrderManagement": {
+        "activeOrdersCount": "Active orders: {{count}}",
+        "noCurrentOrdersForDate": "No current orders for selected date",
+        "ordersForDay": "Orders for {{day}}",
+        "ordersCount": "Orders: {{count}}",
+        "stopsLeft": "Stops left: {{count}}"
+    },
+    "Core": {
+        "IssueScreen": {
+            "issues": "Issues",
+            "status": "Status",
+            "priority": "Priority",
+            "report": "Report",
+            "type": "Type",
+            "category": "Category",
+            "vehicleName": "Vehicle"
+        }
+    },
+    "DriverReport": {
+        "fuelReports": "Fuel reports",
+        "issueOn": "Issue created",
+        "reporter": "Reporter",
+        "fuelReported": "Fuel report created",
+        "noReports": "No reports",
+        "createNewReport": "Create report"
+    },
+    "OrderScreen": {
+        "notAvailable": "Not available",
+        "id": "ID",
+        "internalId": "Internal ID",
+        "trackingNumber": "Tracking number",
+        "type": "Type",
+        "waypointCompletedTitle": "Waypoint completed",
+        "waypointCompletedMessage": "Proceed to the next waypoint?",
+        "continueButtonText": "Continue",
+        "orderNotDispatchedTitle": "Order not dispatched",
+        "orderNotDispatchedMessage": "Order is not yet dispatched",
+        "warningTitle": "Warning",
+        "updatingActivity": "Updating activity...",
+        "statusUpdatedTo": "Status updated to {{status}}",
+        "startOrderButtonText": "Start order",
+        "updateActivityButtonText": "Update status",
+        "startNavigationButtonText": "Start navigation",
+        "orderInformation": "Order information",
+        "proofOfDelivery": "Proof of delivery",
+        "dateCreated": "Created at",
+        "dateScheduled": "Scheduled at",
+        "dateDispatched": "Dispatched at",
+        "orderRoute": "Route",
+        "orderProgress": "Progress",
+        "currentDestination": "Current destination",
+        "nextDestination": "Next destination",
+        "totalDistance": "Total distance",
+        "startTime": "Start time",
+        "currentEta": "Current ETA",
+        "ect": "ECT",
+        "orderNotes": "Notes",
+        "orderProof": "Proof",
+        "orderPayload": "Payload",
+        "customer": "Customer",
+        "orderDocumentsAndFiles": "Documents and files",
+        "orderComments": "Comments"
+    },
+    "FuelReportForm": {
+        "odometer": "Odometer",
+        "volume": "Volume",
+        "cost": "Cost"
+    },
+    "EditLocationCoord": {
+        "savePosition": "Save position"
+    },
+    "EditLocation": {
+        "addressSaved": "Address saved",
+        "defaultLocationSet": "Default address set",
+        "locationDeleted": "Address deleted",
+        "unableSelectLocationType": "Unable to select location type",
+        "types": {
+            "apartment": "Apartment",
+            "house": "House",
+            "office": "Office",
+            "hotel": "Hotel",
+            "hospital": "Hospital",
+            "school": "School",
+            "other": "Other"
+        },
+        "address": "Address",
+        "locationType": "Location type",
+        "addressDetails": "Address details",
+        "addAdditionalAddressDetails": "Add additional address details",
+        "addressLabelOrName": "Address label or name",
+        "streetAddressOrPoBox": "Street address or PO box",
+        "addressLine2": "Address line 2",
+        "optional": "Optional",
+        "neighborhood": "Neighborhood",
+        "cityOrTown": "City or town",
+        "postalOrZipCode": "Postal or ZIP code",
+        "additionalInstructions": "Additional instructions",
+        "whereShouldMeet": "Where should we meet?",
+        "makeDefaultAddress": "Make default address",
+        "deleteAddress": "Delete address",
+        "saveAddress": "Save address"
+    },
+    "EntityScreen": {
+        "details": "Details",
+        "sku": "SKU",
+        "dimensions": "Dimensions",
+        "weight": "Weight"
+    },
+    "FuelReportScreen": {
+        "confirmDeletionTitle": "Delete fuel report?",
+        "confirmDeletionMessage": "This action cannot be undone",
+        "deleteFuelReport": "Delete fuel report",
+        "deletingFuelReport": "Deleting fuel report..."
+    },
+    "IssueScreen": {
+        "reportLocation": "Report location",
+        "confirmDeletionTitle": "Delete issue?",
+        "confirmDeletionMessage": "This action cannot be undone",
+        "deleteIssue": "Delete issue",
+        "deletingIssue": "Deleting issue..."
+    },
+    "AdhocOrder": {
+        "acceptTitle": "Accept order?",
+        "acceptMessage": "Do you want to accept this order?",
+        "accept": "Accept",
+        "dismissTitle": "Dismiss order?",
+        "dismissMessage": "Do you want to dismiss this order?",
+        "acceptOrder": "Accept order",
+        "dismissOrder": "Dismiss order"
+    },
+    "ProofOfDelivery": {
+        "capturingProof": "Capturing proof...",
+        "unableValidateQr": "Unable to validate QR code",
+        "signatureSaveError": "Unable to save signature",
+        "unableUploadPhotos": "Unable to upload photos"
+    },
+    "DriverMenu": {
+        "home": "Home",
+        "orders": "Orders",
+        "reports": "Reports",
+        "chat": "Chat",
+        "account": "Account"
     }
 }

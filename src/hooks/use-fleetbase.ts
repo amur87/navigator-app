@@ -5,33 +5,48 @@ import useStorage from './use-storage';
 
 const useFleetbase = () => {
     const { resolveConnectionConfig } = useConfig();
-    const FLEETBASE_KEY = resolveConnectionConfig('FLEETBASE_KEY');
-    const FLEETBASE_HOST = resolveConnectionConfig('FLEETBASE_HOST');
 
     const [error, setError] = useState<Error | null>(null);
     const [authToken] = useStorage('_driver_token');
-    const [fleetbase, setFleetbase] = useState<Fleetbase | null>(new Fleetbase(authToken ?? FLEETBASE_KEY, { host: FLEETBASE_HOST }));
+    const [fleetbase, setFleetbase] = useState<Fleetbase | null>(null);
 
-    const hasFleetbaseConfig = useCallback(() => {
-        const FLEETBASE_KEY = resolveConnectionConfig('FLEETBASE_KEY');
-        const FLEETBASE_HOST = resolveConnectionConfig('FLEETBASE_HOST');
+    const hasValidConnectionConfig = useCallback(() => {
+        const host = resolveConnectionConfig('FLEETBASE_HOST');
+        const key = resolveConnectionConfig('FLEETBASE_KEY');
+        const hasHost = typeof host === 'string' && host.trim().length > 0;
+        const hasTokenOrKey = typeof authToken === 'string' && authToken.trim().length > 0 ? true : typeof key === 'string' && key.trim().length > 0;
 
-        return typeof FLEETBASE_KEY === 'string' && typeof FLEETBASE_HOST === 'string';
-    }, [resolveConnectionConfig]);
+        return hasHost && hasTokenOrKey;
+    }, [resolveConnectionConfig, authToken]);
 
-    useEffect(() => {
-        const FLEETBASE_HOST = resolveConnectionConfig('FLEETBASE_HOST');
-        const FLEETBASE_KEY = resolveConnectionConfig('FLEETBASE_KEY');
+    const initializeFleetbase = useCallback(() => {
+        const host = resolveConnectionConfig('FLEETBASE_HOST');
+        const key = resolveConnectionConfig('FLEETBASE_KEY');
+        const tokenOrKey = typeof authToken === 'string' && authToken.trim().length > 0 ? authToken : key;
+
+        if (typeof host !== 'string' || host.trim().length === 0 || typeof tokenOrKey !== 'string' || tokenOrKey.trim().length === 0) {
+            setFleetbase(null);
+            return;
+        }
 
         try {
-            // If authToken is present, initialize a new Fleetbase instance with it,
-            // otherwise fall back to the default configuration.
-            const fleetbase = authToken ? new Fleetbase(authToken, { host: FLEETBASE_HOST }) : new Fleetbase(FLEETBASE_KEY, { host: FLEETBASE_HOST });
-            setFleetbase(fleetbase);
+            const instance = new Fleetbase(tokenOrKey, { host });
+            setFleetbase(instance);
+            setError(null);
         } catch (initializationError) {
+            setFleetbase(null);
             setError(initializationError as Error);
+            console.warn('[useFleetbase] Failed to initialize SDK:', initializationError);
         }
-    }, [authToken, resolveConnectionConfig]);
+    }, [resolveConnectionConfig, authToken]);
+
+    const hasFleetbaseConfig = useCallback(() => {
+        return hasValidConnectionConfig();
+    }, [hasValidConnectionConfig]);
+
+    useEffect(() => {
+        initializeFleetbase();
+    }, [initializeFleetbase]);
 
     // Memoize the adapter so that its reference only changes when the fleetbase instance updates.
     const adapter = useMemo(() => {

@@ -7,7 +7,7 @@ export const DefaultConfig = {
         tabs: toArray(config('DRIVER_NAVIGATOR_TABS', 'DriverDashboardTab,DriverTaskTab,DriverReportTab,DriverChatTab,DriverAccountTab')),
         defaultTab: toArray(config('DRIVER_NAVIGATOR_DEFAULT_TAB', 'DriverDashboardTab')),
     },
-    defaultLocale: config('DEFAULT_LOCALE', 'en'),
+    defaultLocale: config('DEFAULT_LOCALE', 'ru'),
     colors: {
         loginBackground: config('LOGIN_BG_COLOR', '#111827'),
     },

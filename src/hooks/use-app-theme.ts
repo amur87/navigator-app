@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useColorScheme, Appearance } from 'react-native';
+import { useColorScheme } from 'react-native';
 import useStorage, { getString, setString } from './use-storage';
 import { navigatorConfig, getTheme } from '../utils';
 import { capitalize } from '../utils/format';
@@ -22,13 +22,12 @@ export default function useAppTheme() {
         if (initializedRef.current) return;
         initializedRef.current = true;
 
-        // Synchronously check persistent storage.
+        const computedTheme = `${userColorScheme}${baseTheme}`;
+        const validThemes = schemes.map((scheme) => `${scheme}${baseTheme}`);
+
+        // Synchronously check persistent storage and migrate legacy values (e.g. "courier").
         const storedTheme = getString(APP_THEME_KEY);
-        if (!storedTheme) {
-            // Compute the default theme
-            const computedTheme = `${userColorScheme}${baseTheme}`;
-            // Force write the default value to storage directly,
-            // then update state so that both are in sync.
+        if (!storedTheme || !validThemes.includes(storedTheme)) {
             setString(APP_THEME_KEY, computedTheme);
             setAppTheme(computedTheme);
         }

@@ -8,6 +8,7 @@ import { format as formatDate } from 'date-fns';
 import useFleetbase from '../hooks/use-fleetbase';
 import useOrderResource from '../hooks/use-order-resource';
 import useAppTheme from '../hooks/use-app-theme';
+import { useLanguage } from '../contexts/LanguageContext';
 import OrderProgressBar from './OrderProgressBar';
 import LiveOrderRoute from './LiveOrderRoute';
 import OrderWaypointList from './OrderWaypointList';
@@ -18,6 +19,7 @@ import Badge from './Badge';
 const INFO_FIELD_VALUE_MIN_HEIGHT = 30;
 export const OrderCard = ({ order, onPress }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const { isDarkMode } = useAppTheme();
     const { trackerData } = useOrderResource(order, { loadEta: false });
     const waypointCustomers = useMemo(() => {
@@ -81,7 +83,7 @@ export const OrderCard = ({ order, onPress }) => {
                                 <YStack flex={1} gap='$2'>
                                     <YStack flex={1} gap='$1'>
                                         <Text color='$textPrimary' fontSize={12}>
-                                            {waypointCustomers.length > 0 ? 'Customers:' : 'Customer:'}
+                                            {waypointCustomers.length > 0 ? `${t('OrderCard.customers')}:` : `${t('OrderCard.customer')}:`}
                                         </Text>
                                         <YStack minHeight={INFO_FIELD_VALUE_MIN_HEIGHT}>
                                             {waypointCustomers.length > 0 ? (
@@ -102,7 +104,7 @@ export const OrderCard = ({ order, onPress }) => {
                                                         </>
                                                     ) : (
                                                         <Text color='$textSecondary' fontSize={12}>
-                                                            N/A
+                                                            {t('OrderScreen.notAvailable')}
                                                         </Text>
                                                     )}
                                                 </>
@@ -111,11 +113,11 @@ export const OrderCard = ({ order, onPress }) => {
                                     </YStack>
                                     <YStack flex={1} gap='$1'>
                                         <Text color='$textPrimary' fontSize={12}>
-                                            Date Scheduled:
+                                            {t('OrderScreen.dateScheduled')}:
                                         </Text>
                                         <YStack minHeight={INFO_FIELD_VALUE_MIN_HEIGHT}>
                                             <LoadingText
-                                                text={order.getAttribute('scheduled_at') ? formatDate(new Date(order.getAttribute('scheduled_at')), 'PP HH:mm') : 'N/A'}
+                                                text={order.getAttribute('scheduled_at') ? formatDate(new Date(order.getAttribute('scheduled_at')), 'PP HH:mm') : t('OrderScreen.notAvailable')}
                                                 numberOfLines={1}
                                                 color='$textSecondary'
                                                 fontSize={12}
@@ -126,11 +128,11 @@ export const OrderCard = ({ order, onPress }) => {
                                 <YStack flex={1} gap='$2'>
                                     <YStack flex={1} gap='$1'>
                                         <Text color='$textPrimary' fontSize={12}>
-                                            POD Required:
+                                            {t('OrderCard.podRequired')}:
                                         </Text>
                                         <YStack minHeight={INFO_FIELD_VALUE_MIN_HEIGHT}>
                                             <LoadingText
-                                                text={order.getAttribute('pod_required') ? titleize(order.getAttribute('pod_method')) : 'N/A'}
+                                                text={order.getAttribute('pod_required') ? titleize(order.getAttribute('pod_method')) : t('OrderScreen.notAvailable')}
                                                 numberOfLines={1}
                                                 color='$textSecondary'
                                                 fontSize={12}
@@ -139,11 +141,11 @@ export const OrderCard = ({ order, onPress }) => {
                                     </YStack>
                                     <YStack flex={1} gap='$1'>
                                         <Text color='$textPrimary' fontSize={12}>
-                                            Dispatched At:
+                                            {t('OrderCard.dispatchedAt')}:
                                         </Text>
                                         <YStack minHeight={INFO_FIELD_VALUE_MIN_HEIGHT}>
                                             <LoadingText
-                                                text={order.getAttribute('dispatched_at') ? formatDate(new Date(order.getAttribute('dispatched_at')), 'PP HH:mm') : 'N/A'}
+                                                text={order.getAttribute('dispatched_at') ? formatDate(new Date(order.getAttribute('dispatched_at')), 'PP HH:mm') : t('OrderScreen.notAvailable')}
                                                 numberOfLines={1}
                                                 color='$textSecondary'
                                                 fontSize={12}
@@ -154,11 +156,11 @@ export const OrderCard = ({ order, onPress }) => {
                                 <YStack flex={1} gap='$2'>
                                     <YStack flex={1} gap='$1'>
                                         <Text color='$textPrimary' fontSize={12}>
-                                            ETA:
+                                            {t('OrderCard.eta')}:
                                         </Text>
                                         <YStack minHeight={INFO_FIELD_VALUE_MIN_HEIGHT}>
                                             <LoadingText
-                                                text={trackerData.current_destination_eta === -1 ? 'N/A' : formatDuration(trackerData.current_destination_eta)}
+                                                text={trackerData.current_destination_eta === -1 ? t('OrderScreen.notAvailable') : formatDuration(trackerData.current_destination_eta)}
                                                 numberOfLines={1}
                                                 color='$textSecondary'
                                                 fontSize={12}

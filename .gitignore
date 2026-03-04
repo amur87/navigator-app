@@ -27,7 +27,7 @@ DerivedData
 build/
 .idea
 .gradle
-local.properties
+# local.properties (temporarily unignored to create)
 *.iml
 android/*.hprof
 android/app/build
@@ -41,7 +41,7 @@ android/app/src/main/assets/index.android.bundle
 node_modules/
 npm-debug.log
 yarn-error.log
-.env
+# .env (temporarily unignored to create)
 .env.*
 
 # BUCK

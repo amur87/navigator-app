@@ -9,6 +9,7 @@ import { last, abbreviateName, later } from '../utils';
 import { formatWhatsAppTimestamp } from '../utils/format';
 import { useChat } from '../contexts/ChatContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 import useSocketClusterClient from '../hooks/use-socket-cluster-client';
 import ChatParticipantAvatar from '../components/ChatParticipantAvatar';
 import BottomSheetSelect from '../components/BottomSheetSelect';
@@ -16,6 +17,7 @@ import BottomSheetSelect from '../components/BottomSheetSelect';
 const ChatParticipantsScreen = ({ route }) => {
     const theme = useTheme();
     const navigation = useNavigation();
+    const { t } = useLanguage();
     const { sendMessage, reloadChannel, removeParticipant, addParticipant, getAvailableParticipants, getChannelCurrentParticipant } = useChat();
     const { listen } = useSocketClusterClient();
     const [channel, setChannel] = useState(route.params.channel);
@@ -54,15 +56,15 @@ const ChatParticipantsScreen = ({ route }) => {
     const handleRemoveParticipant = useCallback(
         (participant) => {
             Alert.alert(
-                'Confirmation',
-                'Are you sure you wish to remove this participant from the chat?',
+                t('common.confirmation'),
+                t('Chat.removeParticipantConfirmation'),
                 [
                     {
-                        text: 'Cancel',
+                        text: t('common.cancel'),
                         style: 'cancel',
                     },
                     {
-                        text: 'Remove Participant',
+                        text: t('Chat.removeParticipant'),
                         onPress: async () => {
                             synchronouslyRemoveParticipant(participant);
                             await removeParticipant(channel, participant);
@@ -123,11 +125,11 @@ const ChatParticipantsScreen = ({ route }) => {
                     <XStack>
                         {canRemoveParticipants && participant.id !== currentParticipant.id && (
                             <YStack>
-                                <Button size='$2' bg='$error' borderWidth={1} borderColor='$errorBorder' onPress={() => handleRemoveParticipant(participant)}>
+                                <Button size='$2' bg='$primary' borderWidth={1} borderColor='$primaryBorder' onPress={() => handleRemoveParticipant(participant)}>
                                     <Button.Icon>
-                                        <FontAwesomeIcon icon={faTrash} color={theme['$errorText'].val} />
+                                        <FontAwesomeIcon icon={faTrash} color={theme['$primaryText'].val} />
                                     </Button.Icon>
-                                    <Button.Text color='$errorText'>Remove</Button.Text>
+                                    <Button.Text color='$primaryText'>{t('common.remove')}</Button.Text>
                                 </Button>
                             </YStack>
                         )}
@@ -143,24 +145,24 @@ const ChatParticipantsScreen = ({ route }) => {
                 <XStack px='$3' justifyContent='space-between' alignItems='center'>
                     <XStack alignItems='center'>
                         <YStack mr='$2'>
-                            <Button onPress={() => navigation.goBack()} bg='$surface' size='$3' circular>
+                            <Button onPress={() => navigation.goBack()} bg='$primary' borderWidth={1} borderColor='$primaryBorder' size='$3' circular>
                                 <Button.Icon>
-                                    <FontAwesomeIcon icon={faChevronLeft} color={theme.textPrimary.val} size={16} />
+                                    <FontAwesomeIcon icon={faChevronLeft} color={theme.primaryText.val} size={16} />
                                 </Button.Icon>
                             </Button>
                         </YStack>
                         <YStack>
                             <Text color='$textPrimary' fontSize={24} fontWeight='bold'>
-                                Participants
+                                {t('Chat.participants')}
                             </Text>
                         </YStack>
                     </XStack>
                     <YStack>
-                        <Button onPress={handleOpenAvailableParticipants} size='$3' bg='$info' borderWidth={1} borderColor='$infoBorder'>
+                        <Button onPress={handleOpenAvailableParticipants} size='$3' bg='$primary' borderWidth={1} borderColor='$primaryBorder'>
                             <Button.Icon>
-                                <FontAwesomeIcon icon={faPlus} color={theme['$infoText'].val} />
+                                <FontAwesomeIcon icon={faPlus} color={theme.primaryText.val} />
                             </Button.Icon>
-                            <Button.Text color='$infoText'>Add Participant</Button.Text>
+                            <Button.Text color='$primaryText'>{t('Chat.addParticipant')}</Button.Text>
                         </Button>
                     </YStack>
                 </XStack>
@@ -201,7 +203,7 @@ const ChatParticipantsScreen = ({ route }) => {
                         </Pressable>
                     );
                 }}
-                title='Select Participant'
+                title={t('Chat.selectParticipant')}
                 virtual={true}
                 renderInPlace={false}
                 portalHost='ChatParticipantsPortal'

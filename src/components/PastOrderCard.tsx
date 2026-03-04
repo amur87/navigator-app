@@ -9,6 +9,7 @@ import { format as formatDate } from 'date-fns';
 import useFleetbase from '../hooks/use-fleetbase';
 import useOrderResource from '../hooks/use-order-resource';
 import useAppTheme from '../hooks/use-app-theme';
+import { useLanguage } from '../contexts/LanguageContext';
 import OrderProgressBar from './OrderProgressBar';
 import LiveOrderRoute from './LiveOrderRoute';
 import OrderWaypointList, { WaypointItem } from './OrderWaypointList';
@@ -19,6 +20,7 @@ import Badge from './Badge';
 const INFO_FIELD_VALUE_MIN_HEIGHT = 30;
 export const PastOrderCard = ({ order, onPress }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const { isDarkMode } = useAppTheme();
     const { trackerData } = useOrderResource(order, { loadEta: false });
 
@@ -85,7 +87,7 @@ export const PastOrderCard = ({ order, onPress }) => {
                             icon={faLocationDot}
                             iconColor={theme['$textPrimary'].val}
                             waypoint={destination.serialize()}
-                            title='Current Destination'
+                            title={t('OrderScreen.currentDestination')}
                             titleStyle={{ fontWeight: 'bold', fontSize: 14, textTransform: 'uppercase' }}
                         />
                     </YStack>

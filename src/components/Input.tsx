@@ -1,12 +1,12 @@
 import { Input as GUIInput, YStack } from 'tamagui';
 import useAppTheme from '../hooks/use-app-theme';
 
-const Input = ({ size = '$5', color = '$textPrimary', borderColor = '$borderColorWithShadow', borderRadius = '$5', bg, ...props }) => {
+const Input = ({ size = '$5', color = '$textPrimary', borderColor = '$borderColorWithShadow', borderRadius = '$5', bg, containerHeight = 50, ...props }) => {
     const { isDarkMode } = useAppTheme();
     const backgroundColor = bg ? bg : isDarkMode ? '$surface' : '$white';
 
     return (
-        <YStack height={50}>
+        <YStack height={containerHeight}>
             <GUIInput
                 size={size}
                 color={color}
@@ -15,7 +15,7 @@ const Input = ({ size = '$5', color = '$textPrimary', borderColor = '$borderColo
                 bg={backgroundColor}
                 borderWidth={1}
                 flex={1}
-                autoCapitalize={false}
+                autoCapitalize='none'
                 autoComplete='off'
                 autoCorrect={false}
                 shadowOpacity={0}

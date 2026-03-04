@@ -22,11 +22,10 @@ buildscript {
         }
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:3.5.4")
+        classpath("com.android.tools.build:gradle:8.7.0")
         classpath("com.facebook.react:react-native-gradle-plugin")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
         classpath('com.google.gms:google-services:4.3.15')
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
     }
 }
 
@@ -37,6 +36,14 @@ allprojects {
         maven { url 'https://developer.huawei.com/repo/' }
         // Required for react-native-background-fetch
         maven { url("${project(':react-native-background-fetch').projectDir}/libs") }
+    }
+
+    configurations.all {
+        resolutionStrategy {
+            // Keep androidx.core compatible with AGP 8.7.x / compileSdk 35 in this project.
+            force 'androidx.core:core:1.13.1'
+            force 'androidx.core:core-ktx:1.13.1'
+        }
     }
 }
 

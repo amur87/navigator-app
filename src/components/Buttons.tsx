@@ -1,20 +1,35 @@
-import React from 'react';
+﻿import React from 'react';
 import { Button } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faFacebook, faInstagram, faGoogle, faApple } from '@fortawesome/free-brands-svg-icons';
-import { faPhone } from '@fortawesome/free-solid-svg-icons';
 import LinearGradient from 'react-native-linear-gradient';
 import { useTheme } from 'tamagui';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const PhoneLoginButton = ({ onPress, ...props }) => {
-    const theme = useTheme();
+    const { t, language } = useLanguage();
+    const isCyrillic = language?.code === 'ru' || language?.code === 'ky';
+    const localeCode = language?.code === 'ru' || language?.code === 'ky' ? language.code : 'en';
+    const labelByLocale = {
+        en: 'Sign in',
+        ru: 'Войти',
+        ky: 'Кирүү',
+    };
 
     return (
-        <Button onPress={onPress} bg='$subsurface' borderWidth={1} borderColor='$borderColor' width='100%' {...props} rounded>
-            <Button.Icon>
-                <FontAwesomeIcon icon={faPhone} color={theme['$textPrimary'].val} />
-            </Button.Icon>
-            <Button.Text color='$textPrimary'>Continue with Phone</Button.Text>
+        <Button
+            onPress={onPress}
+            bg="#112b66"
+            borderWidth={1.5}
+            borderColor="#112b66"
+            width="100%"
+            height={52}
+            {...props}
+            borderRadius={20}
+        >
+            <Button.Text color="#FFFFFF" fontFamily={isCyrillic ? undefined : 'Rubik-Bold'} fontSize={16} fontWeight="700">
+                {labelByLocale[localeCode] || t('Auth.LoginScreen.continueWithPhoneButtonText')}
+            </Button.Text>
         </Button>
     );
 };
@@ -22,7 +37,7 @@ export const PhoneLoginButton = ({ onPress, ...props }) => {
 export const AppleLoginButton = ({ onPress, ...props }) => {
     const theme = useTheme();
     return (
-        <Button onPress={onPress} bg='$white' borderWidth={1} borderColor='$gray-200' {...props} rounded>
+        <Button onPress={onPress} bg="$white" borderWidth={1} borderColor="$gray-200" {...props} rounded>
             <Button.Icon>
                 <FontAwesomeIcon icon={faApple} color={theme['$gray-900'].val} />
             </Button.Icon>
@@ -33,7 +48,7 @@ export const AppleLoginButton = ({ onPress, ...props }) => {
 export const FacebookLoginButton = ({ onPress, ...props }) => {
     const theme = useTheme();
     return (
-        <Button onPress={onPress} bg='$blue-600' borderWidth={1} borderColor='$blue-800' {...props} rounded>
+        <Button onPress={onPress} bg="$blue-600" borderWidth={1} borderColor="$blue-800" {...props} rounded>
             <Button.Icon>
                 <FontAwesomeIcon icon={faFacebook} color={theme['$blue-100'].val} />
             </Button.Icon>
@@ -51,9 +66,9 @@ export const InstagramLoginButton = ({ onPress, style = {}, ...props }) => {
             style={[style, { width: '100%', borderRadius: 8 }]}
             {...props}
         >
-            <Button onPress={onPress} bg='transparent' width='100%' rounded>
+            <Button onPress={onPress} bg="transparent" width="100%" rounded>
                 <Button.Icon>
-                    <FontAwesomeIcon icon={faInstagram} color={theme['$white'].val} />
+                    <FontAwesomeIcon icon={faInstagram} color={theme.$white.val} />
                 </Button.Icon>
             </Button>
         </LinearGradient>
@@ -61,9 +76,10 @@ export const InstagramLoginButton = ({ onPress, style = {}, ...props }) => {
 };
 
 export const GoogleLoginButton = ({ onPress, ...props }) => (
-    <Button onPress={onPress} bg='#4285F4' {...props} rounded>
+    <Button onPress={onPress} bg="#4285F4" {...props} rounded>
         <Button.Icon>
-            <FontAwesomeIcon icon={faGoogle} color='white' />
+            <FontAwesomeIcon icon={faGoogle} color="white" />
         </Button.Icon>
     </Button>
 );
+

@@ -5,6 +5,7 @@ import HeaderButton from '../../components/HeaderButton';
 import { PortalHost } from '@gorhom/portal';
 import { getTheme } from '../../utils';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import I18n from 'react-native-i18n';
 
 export const Order = {
     screen: OrderScreen,
@@ -50,7 +51,7 @@ export const OrderHistory = {
     screen: OrderHistoryScreen,
     options: ({ navigation }) => {
         return {
-            title: 'Order History',
+            title: I18n.t('OrderHistoryScreen.title'),
             headerTitleStyle: {
                 color: getTheme('textPrimary'),
             },

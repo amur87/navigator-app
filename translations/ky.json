@@ -17,7 +17,15 @@
         "confirmation": "Ырастоо",
         "ok": "Макул",
         "done": "Даяр",
-        "tryAgain": "Дагы бир жолу аракет кылуу"
+        "tryAgain": "Дагы бир жолу аракет кылуу",
+        "remove": "Алып салуу",
+        "unselect": "Тандоодон баш тартуу",
+        "select": "Тандоо",
+        "unavailable": "Жеткиликсиз",
+        "error": "Ката",
+        "reset": "Калыбына келтирүү",
+        "yes": "Ооба",
+        "storefront": "Storefront"
     },
     "orderStatuses": {
         "created": "Түзүлдү",
@@ -56,10 +64,12 @@
         "schemeChanged": "Эми {{selectedScheme}} режими колдонулат.",
         "languageChanged": "Эми {{selectedLanguage}} тили колдонулат.",
         "photoChanged": "Профиль сүрөтү өзгөртүлдү.",
-        "photoRemoved": "Профиль сүрөтү өчүрүлдү."
+        "photoRemoved": "Профиль сүрөтү өчүрүлдү.",
+        "propertyChangesSaved": "\"{{propertyName}}\" үчүн өзгөртүүлөр сакталды."
     },
     "ProfileScreen": {
-        "organizationChanged": "{{selectedOrganization}} уюмуна алмаштырылды."
+        "organizationChanged": "{{selectedOrganization}} уюмуна алмаштырылды.",
+        "noOrganizations": "Эч кандай уюм табылган жок"
     },
     "AddNewLocationScreen": {
         "addNewAddress": "Жаңы дарек кошуу",
@@ -84,5 +94,194 @@
         "locationBlockedPrompt": "Жайгашкан жерге жетүү бөгөттөлгөн. Улантуу үчүн Жөндөөлөргө кирип, күйгүзүңүз.",
         "goToSettings": "Жөндөөлөргө өтүү",
         "skipForNow": "Азырынча өткөрүп жиберүү"
+    },
+    "Chat": {
+        "removeParticipantConfirmation": "Бул катышуучу чаттан чыгарылсынбы?",
+        "removeParticipant": "Катышуучуну алып салуу",
+        "participants": "Катышуучулар",
+        "addParticipant": "Катышуучу кошуу",
+        "selectParticipant": "Катышуучуну тандаңыз",
+        "createChannelNameRequired": "Канал атын киргизиңиз",
+        "newChannelCreated": "Жаңы чат каналы түзүлдү",
+        "createNewChat": "Жаңы чат түзүү",
+        "channelName": "Канал аты",
+        "inputChatChannelNamePlaceholder": "Канал атын киргизиңиз",
+        "selectParticipants": "Катышуучуларды тандаңыз"
+    },
+    "Auth": {
+        "LoginScreen": {
+            "invalidPhoneNumber": "Жарактуу телефон номерин киргизиңиз",
+            "welcomeTitle": "жеткирүү макс кош келиңиз.",
+            "chooseLanguage": "Төмөндө жактырган колдонмо тилин тандаңыз",
+            "registerButtonText": "Каттоо"
+        },
+        "CreateAccountScreen": {
+            "title": "Эсеп түзүү",
+            "nameInputPlaceholder": "Атыңызды киргизиңиз",
+            "sendVerificationCodeButtonText": "Код жөнөтүү",
+            "haveAccountLoginButtonText": "Менин аккаунтум бар",
+            "codeRequiredError": "Текшерүү кодун киргизиңиз",
+            "missingPhoneError": "Телефон номери табылган жок",
+            "awaitingVerificationTitle": "{{name}} жөнөтүлгөн кодду киргизиңиз",
+            "verifyCodeButtonText": "Ырастоо",
+            "retryButtonText": "Кайталап көрүңүз"
+        }
+    },
+    "Account": {
+        "AccountScreen": {
+            "organization": "Уюштуруу"
+        }
+    },
+    "DriverDashboard": {
+        "onlineStatusOn": "Дежурный",
+        "onlineStatusOff": "Кызматтан сырткары",
+        "location": "Жайгашкан жер",
+        "go": "Go",
+        "activeOrdersOnMap": "Картада активдүү заказдар",
+        "activeOrders": "Активдүү заказдар",
+        "speed": "Ылдамдык"
+    },
+    "DriverOrderManagement": {
+        "activeOrdersCount": "Жигердүү буйрутмалар: {{count}}",
+        "noCurrentOrdersForDate": "Тандалган күн үчүн учурдагы буйрутмалар жок",
+        "ordersForDay": "{{day}} үчүн буйрутмалар",
+        "ordersCount": "Заказдар: {{count}}",
+        "stopsLeft": "Сол жакта токтойт: {{count}}"
+    },
+    "Core": {
+        "IssueScreen": {
+            "issues": "Маселелер",
+            "status": "Статус",
+            "priority": "Приоритет",
+            "report": "Баяндама",
+            "type": "Type",
+            "category": "Категория",
+            "vehicleName": "Унаа"
+        }
+    },
+    "DriverReport": {
+        "fuelReports": "Күйүүчү май отчеттор",
+        "issueOn": "Маселе түзүлдү",
+        "reporter": "Кабарчы",
+        "fuelReported": "Күйүүчү май жөнүндө отчет түзүлдү",
+        "noReports": "Отчеттор жок",
+        "createNewReport": "Отчет түзүү"
+    },
+    "OrderScreen": {
+        "notAvailable": "жеткиликтүү эмес",
+        "id": "ID",
+        "internalId": "Ички ID",
+        "trackingNumber": "Көз салуу номери",
+        "type": "Type",
+        "waypointCompletedTitle": "Жол чекити аяктады",
+        "waypointCompletedMessage": "Кийинки чекитке өтөсүзбү?",
+        "continueButtonText": "Улантуу",
+        "orderNotDispatchedTitle": "Заказ жөнөтүлгөн жок",
+        "orderNotDispatchedMessage": "Заказ азырынча жөнөтүлө элек",
+        "warningTitle": "Эскертүү",
+        "updatingActivity": "Аракет жаңыртылууда...",
+        "statusUpdatedTo": "Статус {{status}} болуп жаңырды",
+        "startOrderButtonText": "Заказ баштоо",
+        "updateActivityButtonText": "Статусту жаңыртуу",
+        "startNavigationButtonText": "Навигацияны баштоо",
+        "orderInformation": "Заказ маалымат",
+        "proofOfDelivery": "жеткирүү далили",
+        "dateCreated": "түзүлгөн",
+        "dateScheduled": "График боюнча",
+        "dateDispatched": "Dispatched at",
+        "orderRoute": "Маршрут",
+        "orderProgress": "Прогресс",
+        "currentDestination": "Учурдагы көздөгөн жер",
+        "nextDestination": "Кийинки көздөгөн жер",
+        "totalDistance": "Жалпы аралык",
+        "startTime": "Баштоо убактысы",
+        "currentEta": "Учурдагы ETA",
+        "ect": "ECT",
+        "orderNotes": "Эскертүүлөр",
+        "orderProof": "Далил",
+        "orderPayload": "Пайдалуу жүк",
+        "customer": "Кардар",
+        "orderDocumentsAndFiles": "Документтер жана файлдар",
+        "orderComments": "Комментарийлер"
+    },
+    "FuelReportForm": {
+        "odometer": "Одометр",
+        "volume": "Көлөм",
+        "cost": "Наркы"
+    },
+    "EditLocationCoord": {
+        "savePosition": "Позицияны сактоо"
+    },
+    "EditLocation": {
+        "addressSaved": "Дарек сакталды",
+        "defaultLocationSet": "Демейки дарек коюлган",
+        "locationDeleted": "Дарек жок кылынды",
+        "unableSelectLocationType": "Жайгашкан жердин түрүн тандоо мүмкүн эмес",
+        "types": {
+            "apartment": "Квартира",
+            "house": "House",
+            "office": "Office",
+            "hotel": "Мейманкана",
+            "hospital": "Оорукана",
+            "school": "Мектеп",
+            "other": "Башка"
+        },
+        "address": "Дарек",
+        "locationType": "Жайгашкан жер түрү",
+        "addressDetails": "Дарек маалыматы",
+        "addAdditionalAddressDetails": "Кошумча дарек чоо-жайын кошуу",
+        "addressLabelOrName": "Дарек белгиси же аты",
+        "streetAddressOrPoBox": "Көчө дареги же почта кутусу",
+        "addressLine2": "Дарек сап 2",
+        "optional": "Кошумча",
+        "neighborhood": "Коңшулук",
+        "cityOrTown": "Шаар же шаар",
+        "postalOrZipCode": "Почта же почта индекси",
+        "additionalInstructions": "Кошумча көрсөтмөлөр",
+        "whereShouldMeet": "Кайда жолугалы?",
+        "makeDefaultAddress": "Демейки даректи жасаңыз",
+        "deleteAddress": "Даректи жок кылуу",
+        "saveAddress": "Даректи сактоо"
+    },
+    "EntityScreen": {
+        "details": "Толук маалымат",
+        "sku": "SKU",
+        "dimensions": "Өлчөмдөр",
+        "weight": "Салмагы"
+    },
+    "FuelReportScreen": {
+        "confirmDeletionTitle": "Күйүүчү май тууралуу отчет жок кылынсынбы?",
+        "confirmDeletionMessage": "Бул аракетти артка кайтаруу мүмкүн эмес",
+        "deleteFuelReport": "Күйүүчү май отчетун өчүрүү",
+        "deletingFuelReport": "Күйүүчү май тууралуу отчет жок кылынууда..."
+    },
+    "IssueScreen": {
+        "reportLocation": "Жайгашкан жерди кабарлоо",
+        "confirmDeletionTitle": "Маселе жок кылынсынбы?",
+        "confirmDeletionMessage": "Бул аракетти артка кайтаруу мүмкүн эмес",
+        "deleteIssue": "Маселени жок кылуу",
+        "deletingIssue": "Маселе жок кылынууда..."
+    },
+    "AdhocOrder": {
+        "acceptTitle": "Заказ кабыл аласынбы?",
+        "acceptMessage": "Бул буйрукту кабыл алгыңыз келеби?",
+        "accept": "Кабыл алуу",
+        "dismissTitle": "Буйрутманы четке кагуу керекпи?",
+        "dismissMessage": "Бул буйрукту жокко чыгаргыңыз келеби?",
+        "acceptOrder": "Заказ кабылдаймын",
+        "dismissOrder": "Буйрутманы четке кагуу"
+    },
+    "ProofOfDelivery": {
+        "capturingProof": "Далил тартылууда...",
+        "unableValidateQr": "QR кодун текшерүү мүмкүн эмес",
+        "signatureSaveError": "Кол коюуну сактоо мүмкүн эмес",
+        "unableUploadPhotos": "Сүрөттөрдү жүктөө мүмкүн эмес"
+    },
+    "DriverMenu": {
+        "home": "Башкы",
+        "orders": "Заказдар",
+        "reports": "Отчеттор",
+        "chat": "Чат",
+        "account": "Аккаунт"
     }
 }

@@ -7,9 +7,53 @@ import useStorage, { storage } from '../hooks/use-storage';
 import useFleetbase from '../hooks/use-fleetbase';
 import { useLanguage } from './LanguageContext';
 import { useNotification } from './NotificationContext';
-import { LoginManager as FacebookLoginManager } from 'react-native-fbsdk-next';
 
 const AuthContext = createContext();
+
+const logoutFacebookIfAvailable = () => {
+    try {
+        const facebookSdk = require('react-native-fbsdk-next');
+        const loginManager = facebookSdk?.LoginManager ?? facebookSdk?.default?.LoginManager;
+        if (loginManager && typeof loginManager.logOut === 'function') {
+            loginManager.logOut();
+        }
+    } catch (error) {
+        // FB SDK is optional for this build; ignore when unavailable.
+    }
+};
+
+const getErrorText = (error) => {
+    const messageParts = [error?.message, error?.error, error?.response?.data?.error];
+    const responseErrors = error?.response?.data?.errors;
+    if (isArray(responseErrors)) {
+        messageParts.push(...responseErrors);
+    }
+
+    return messageParts.filter((part) => typeof part === 'string' && part.trim().length > 0).join(' ');
+};
+
+const isRouteMissingError = (error) => {
+    const status = error?.response?.status ?? error?.status;
+    const text = getErrorText(error).toLowerCase();
+    return status === 404 || status === 405 || text.includes('not found') || text.includes('method not allowed');
+};
+
+const resolveDriverFromResponse = (response) => {
+    if (!response) {return null;}
+    if (response instanceof Driver) {return response;}
+    return response?.driver ?? response?.data?.driver ?? response;
+};
+
+const getDriverOnlineStatus = (driver) => {
+    if (!driver) {return false;}
+    if (typeof driver.isOnline === 'boolean') {return driver.isOnline;}
+    if (typeof driver.getAttribute === 'function') {
+        const online = driver.getAttribute('online');
+        if (typeof online === 'boolean') {return online;}
+    }
+    if (typeof driver.online === 'boolean') {return driver.online;}
+    return false;
+};
 
 const authReducer = (state, action) => {
     switch (action.type) {
@@ -50,28 +94,37 @@ export const AuthProvider = ({ children }) => {
     });
     const organizationsLoadedRef = useRef(false);
     const loadOrganizationsPromiseRef = useRef();
+    const didInitAuthRef = useRef(false);
 
-    // Restore session on app load
+    const getFleetbaseOrThrow = useCallback(() => {
+        if (!fleetbase) {
+            throw new Error('Fleetbase SDK is not initialized. Check FLEETBASE_HOST and FLEETBASE_KEY.');
+        }
+
+        return fleetbase;
+    }, [fleetbase]);
+
+    // Reset auth only once on app start.
     useEffect(() => {
-        if (storedDriver) {
-            if (storedDriver.token) {
-                setAuthToken(storedDriver.token);
-            }
-            dispatch({ type: 'RESTORE_SESSION', driver: new Driver(storedDriver, adapter) });
-        } else {
-            dispatch({ type: 'RESTORE_SESSION', driver: null });
+        if (didInitAuthRef.current) {
+            return;
         }
 
-        // Load organizations once
-        if (organizationsLoadedRef && organizationsLoadedRef.current === false) {
-            loadOrganizations();
+        didInitAuthRef.current = true;
+
+        if (storedDriver) {
+            setStoredDriver(null);
         }
-    }, [storedDriver, fleetbase]);
+
+        setAuthToken(null);
+        dispatch({ type: 'RESTORE_SESSION', driver: null });
+    }, [storedDriver, setStoredDriver, setAuthToken]);
 
     const setDriver = useCallback(
         (newDriver) => {
             if (!newDriver) {
                 setStoredDriver(null);
+                dispatch({ type: 'RESTORE_SESSION', driver: null });
                 EventRegister.emit('driver.updated', null);
                 return;
             }
@@ -84,9 +137,10 @@ export const AuthProvider = ({ children }) => {
             }
 
             setStoredDriver(driverInstance.serialize());
+            dispatch({ type: 'RESTORE_SESSION', driver: driverInstance });
             EventRegister.emit('driver.updated', driverInstance);
         },
-        [fleetbase, setStoredDriver]
+        [adapter, dispatch, setStoredDriver]
     );
 
     // Track driver location
@@ -99,12 +153,12 @@ export const AuthProvider = ({ children }) => {
                 throw err;
             }
         },
-        [state.driver]
+        [setDriver, state.driver]
     );
 
     // Reload the driver resource
     const reloadDriver = useCallback(
-        async (data = {}) => {
+        async () => {
             try {
                 const driver = await state.driver.reload();
                 setDriver(driver);
@@ -112,7 +166,7 @@ export const AuthProvider = ({ children }) => {
                 throw err;
             }
         },
-        [state.driver]
+        [setDriver, state.driver]
     );
 
     // Track driver position and other position related data
@@ -125,7 +179,7 @@ export const AuthProvider = ({ children }) => {
                 throw err;
             }
         },
-        [state.driver]
+        [setDriver, state.driver]
     );
 
     // Update driver meta attributes
@@ -140,7 +194,7 @@ export const AuthProvider = ({ children }) => {
                 throw err;
             }
         },
-        [state.driver]
+        [setDriver, state.driver]
     );
 
     // Update driver meta attributes
@@ -157,15 +211,15 @@ export const AuthProvider = ({ children }) => {
                 throw err;
             }
         },
-        [state.driver]
+        [setDriver, state.driver]
     );
 
     // Toggle driver online status
     const toggleOnline = useCallback(
         async (online = null) => {
-            if (!adapter) return;
+            if (!adapter) {return;}
 
-            online = online === null ? !state.driver.isOnline : online;
+            online = online === null ? !getDriverOnlineStatus(state.driver) : online;
 
             try {
                 const driver = await adapter.post(`drivers/${state.driver.id}/toggle-online`, { online });
@@ -176,33 +230,113 @@ export const AuthProvider = ({ children }) => {
                 throw err;
             }
         },
-        [state.driver, adapter]
+        [adapter, setDriver, state.driver]
     );
 
     // Register driver's device and platform
-    const syncDevice = async (driver, token) => {
+    const syncDevice = useCallback(async (driver, token) => {
         try {
             await driver.syncDevice({ token, platform: Platform.OS });
         } catch (err) {
             throw err;
         }
-    };
+    }, []);
 
     // Register current state driver's device and platform
-    const registerDevice = async (token) => {
+    const registerDevice = useCallback(async (token) => {
         try {
             await syncDevice(state.driver, token);
         } catch (err) {
             throw err;
         }
-    };
+    }, [state.driver, syncDevice]);
+
+    // Remove local session data
+    const clearSessionData = useCallback(() => {
+        storage.removeItem('_driver_token');
+        storage.removeItem('organizations');
+        storage.removeItem('driver');
+
+        logoutFacebookIfAvailable();
+    }, []);
+
+    // Create a session from driver data/JSON
+    const createDriverSession = useCallback(
+        async (driver, callback = null) => {
+            clearSessionData();
+            // setDriverDefaultLocation(driver);
+            setDriver(driver);
+            setAuthToken(driver.token);
+
+            // run a callback with the driver instance
+            const instance = new Driver(driver, adapter);
+            if (typeof callback === 'function') {
+                callback(instance);
+            }
+
+            // Sync the driver device
+            if (deviceToken) {
+                syncDevice(instance, deviceToken);
+            }
+
+            organizationsLoadedRef.current = false;
+            loadOrganizationsPromiseRef.current = null;
+
+            return instance;
+        },
+        [adapter, clearSessionData, deviceToken, setAuthToken, setDriver, syncDevice]
+    );
 
     // Create Account: Send verification code
     const requestCreationCode = useCallback(
         async (phone, method = 'sms') => {
             dispatch({ type: 'CREATING_ACCOUNT', phone, isSendingCode: true });
             try {
-                await fleetbase.drivers.requestCreationCode(phone, method);
+                const sdk = getFleetbaseOrThrow();
+                if (typeof sdk?.drivers?.requestCreationCode === 'function') {
+                    await sdk.drivers.requestCreationCode(phone, method);
+                } else if (adapter) {
+                    const attempts = [
+                        { path: 'drivers/request-creation-code', payload: { identity: phone, mode: method } },
+                        { path: 'drivers/request-creation-code', payload: { phone, mode: method } },
+                        { path: 'drivers/create-account/request-code', payload: { identity: phone, mode: method } },
+                        { path: 'drivers/register/request-code', payload: { identity: phone, mode: method } },
+                        { path: 'drivers/login-with-sms', payload: { phone } },
+                    ];
+
+                    let lastError = null;
+                    for (const attempt of attempts) {
+                        try {
+                            await adapter.post(attempt.path, attempt.payload);
+                            lastError = null;
+                            break;
+                        } catch (error) {
+                            const normalizedMessage = getErrorText(error).toLowerCase();
+                            if (normalizedMessage.includes('already exists') || normalizedMessage.includes('already registered')) {
+                                throw error;
+                            }
+
+                            if (isRouteMissingError(error)) {
+                                lastError = error;
+                                continue;
+                            }
+
+                            // If endpoint exists but payload format is rejected, try next variant.
+                            if ((error?.response?.status ?? error?.status) === 400) {
+                                lastError = error;
+                                continue;
+                            }
+
+                            throw error;
+                        }
+                    }
+
+                    if (lastError) {
+                        throw lastError;
+                    }
+                } else {
+                    throw new Error('Fleetbase adapter is not initialized.');
+                }
                 dispatch({ type: 'CREATING_ACCOUNT', phone, isSendingCode: false });
             } catch (error) {
                 console.warn('[AuthContext] Account creation verification failed:', error);
@@ -211,7 +345,7 @@ export const AuthProvider = ({ children }) => {
                 dispatch({ type: 'CREATING_ACCOUNT', phone, isSendingCode: false });
             }
         },
-        [fleetbase]
+        [getFleetbaseOrThrow, adapter]
     );
 
     // Create Account: Verify Code
@@ -219,7 +353,52 @@ export const AuthProvider = ({ children }) => {
         async (phone, code, attributes = {}) => {
             dispatch({ type: 'VERIFY', isVerifyingCode: true });
             try {
-                const driver = await fleetbase.drivers.create(phone, code, attributes);
+                const sdk = getFleetbaseOrThrow();
+                const payload = { identity: phone, code, ...attributes };
+                let response = null;
+
+                if (typeof sdk?.drivers?.create === 'function' && sdk.drivers.create.length <= 2) {
+                    response = await sdk.drivers.create(payload);
+                } else if (adapter) {
+                    const attempts = [
+                        { path: 'drivers', payload },
+                        { path: 'drivers/create', payload },
+                        { path: 'drivers/verify-code', payload },
+                    ];
+
+                    let lastError = null;
+                    for (const attempt of attempts) {
+                        try {
+                            response = await adapter.post(attempt.path, attempt.payload);
+                            lastError = null;
+                            break;
+                        } catch (error) {
+                            if (isRouteMissingError(error)) {
+                                lastError = error;
+                                continue;
+                            }
+
+                            if ((error?.response?.status ?? error?.status) === 400) {
+                                lastError = error;
+                                continue;
+                            }
+
+                            throw error;
+                        }
+                    }
+
+                    if (lastError && !response) {
+                        throw lastError;
+                    }
+                } else {
+                    throw new Error('Fleetbase adapter is not initialized.');
+                }
+
+                const driver = resolveDriverFromResponse(response);
+                if (!driver) {
+                    throw new Error('Unable to create driver session from API response.');
+                }
+
                 createDriverSession(driver);
                 dispatch({ type: 'VERIFY', driver });
             } catch (error) {
@@ -229,7 +408,7 @@ export const AuthProvider = ({ children }) => {
                 dispatch({ type: 'VERIFY', isVerifyingCode: false });
             }
         },
-        [fleetbase]
+        [adapter, createDriverSession, getFleetbaseOrThrow]
     );
 
     // Login: Send verification code
@@ -237,7 +416,8 @@ export const AuthProvider = ({ children }) => {
         async (phone) => {
             dispatch({ type: 'LOGIN', phone, isSendingCode: true });
             try {
-                const { method } = await fleetbase.drivers.login(phone);
+                const sdk = getFleetbaseOrThrow();
+                const { method } = await sdk.drivers.login(phone);
                 dispatch({ type: 'LOGIN', phone, isSendingCode: false, loginMethod: method ?? 'sms' });
             } catch (error) {
                 dispatch({ type: 'LOGIN', phone, isSendingCode: false });
@@ -245,25 +425,27 @@ export const AuthProvider = ({ children }) => {
                 throw error;
             }
         },
-        [fleetbase]
+        [getFleetbaseOrThrow]
     );
-
-    // Remove local session data
-    const clearSessionData = () => {
-        storage.removeItem('_driver_token');
-        storage.removeItem('organizations');
-        storage.removeItem('driver');
-
-        // If logged in with facebook
-        FacebookLoginManager.logOut();
-    };
 
     // Verify code
     const verifyCode = useCallback(
         async (code) => {
+            const normalizedPhone = `${state.phone ?? ''}`.trim();
+            const normalizedCode = `${code ?? ''}`.replace(/\D/g, '');
+
+            if (!normalizedPhone) {
+                throw new Error('Phone number is missing. Please request a new code.');
+            }
+
+            if (normalizedCode.length !== 6) {
+                throw new Error('Invalid verification code.');
+            }
+
             dispatch({ type: 'VERIFY', isVerifyingCode: true });
             try {
-                const driver = await fleetbase.drivers.verifyCode(state.phone, code);
+                const sdk = getFleetbaseOrThrow();
+                const driver = await sdk.drivers.verifyCode(normalizedPhone, normalizedCode);
                 createDriverSession(driver);
                 dispatch({ type: 'VERIFY', driver, isVerifyingCode: false });
             } catch (error) {
@@ -272,36 +454,12 @@ export const AuthProvider = ({ children }) => {
                 throw error;
             }
         },
-        [fleetbase, state.phone, setDriver]
+        [createDriverSession, getFleetbaseOrThrow, state.phone]
     );
-
-    // Create a session from driver data/JSON
-    const createDriverSession = async (driver, callback = null) => {
-        clearSessionData();
-        // setDriverDefaultLocation(driver);
-        setDriver(driver);
-        setAuthToken(driver.token);
-
-        // run a callback with the driver instance
-        const instance = new Driver(driver, adapter);
-        if (typeof callback === 'function') {
-            callback(instance);
-        }
-
-        // Sync the driver device
-        if (deviceToken) {
-            syncDevice(instance, deviceToken);
-        }
-
-        organizationsLoadedRef.current = false;
-        loadOrganizationsPromiseRef.current = null;
-
-        return instance;
-    };
 
     // Load organizations driver belongs to
     const loadOrganizations = useCallback(async () => {
-        if (!state.driver || loadOrganizationsPromiseRef.current) return;
+        if (!state.driver || loadOrganizationsPromiseRef.current) {return;}
 
         try {
             loadOrganizationsPromiseRef.current = state.driver.listOrganizations();
@@ -314,12 +472,12 @@ export const AuthProvider = ({ children }) => {
             organizationsLoadedRef.current = true;
             loadOrganizationsPromiseRef.current = null;
         }
-    }, [state.driver]);
+    }, [setOrganizations, state.driver]);
 
     // Load organizations driver belongs to
     const switchOrganization = useCallback(
         async (organization) => {
-            if (!adapter) return;
+            if (!adapter) {return;}
 
             try {
                 const { driver } = await adapter.post(`drivers/${state.driver.id}/switch-organization`, { next: organization.id });
@@ -330,12 +488,12 @@ export const AuthProvider = ({ children }) => {
                 console.warn('Error trying to switch driver organization:', err);
             }
         },
-        [adapter, state.driver]
+        [adapter, createDriverSession, state.driver]
     );
 
     // Load organizations driver belongs to
     const getCurrentOrganization = useCallback(async () => {
-        if (!state.driver) return;
+        if (!state.driver) {return;}
 
         try {
             const currentOrganization = await state.driver.currentOrganization();
@@ -361,7 +519,7 @@ export const AuthProvider = ({ children }) => {
         later(() => {
             dispatch({ type: 'LOGOUT', isSigningOut: false });
         });
-    }, [setDriver]);
+    }, [clearSessionData, setDriver, setLocale]);
 
     // // Sync device token if it changes
     // // Test on IOS before adding
@@ -380,12 +538,14 @@ export const AuthProvider = ({ children }) => {
             isVerifyingCode: state.isVerifyingCode,
             isAuthenticated: !!state.driver,
             isNotAuthenticated: !state.driver,
-            isOnline: state.driver?.isOnline,
-            isOffline: state.driver?.isOnline === false,
+            isOnline: getDriverOnlineStatus(state.driver),
+            isOffline: getDriverOnlineStatus(state.driver) === false,
+            isSigningOut: state.isSigningOut,
             isUpdating: state.isUpdating,
             loginMethod: state.loginMethod,
             updateDriverMeta,
             updateDriver,
+            trackDriverLocation,
             organizations,
             loadOrganizations,
             switchOrganization,
@@ -406,21 +566,28 @@ export const AuthProvider = ({ children }) => {
             authToken,
         }),
         [
-            state,
-            login,
-            verifyCode,
-            logout,
-            loadOrganizations,
-            switchOrganization,
+            authToken,
+            clearSessionData,
+            createDriverSession,
             getCurrentOrganization,
-            updateDriverMeta,
-            updateDriver,
+            login,
+            loadOrganizations,
+            logout,
+            organizations,
+            registerDevice,
             reloadDriver,
+            requestCreationCode,
+            setDriver,
+            state,
+            switchOrganization,
+            syncDevice,
+            toggleOnline,
             trackDriver,
             trackDriverLocation,
-            organizations,
-            storedDriver,
-            authToken,
+            updateDriverMeta,
+            updateDriver,
+            verifyAccountCreation,
+            verifyCode,
         ]
     );
 

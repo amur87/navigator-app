@@ -8,6 +8,7 @@ import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { Portal } from '@gorhom/portal';
 import { debounce } from '../utils';
 import unit from '../constants/Units';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const getDefaultUnit = (type, defaultValue) => {
     if (typeof type === 'string' && type.startsWith('volume')) {
@@ -30,7 +31,7 @@ const UnitInput = ({
     type = 'volume',
     snapTo = '100%',
     backgroundColor = '$surface',
-    placeholder = 'Input volume',
+    placeholder,
     wrapperProps = {},
     portalHost = 'MainPortal',
     onBottomSheetPositionChanged,
@@ -38,6 +39,7 @@ const UnitInput = ({
     onBottomSheetClosed,
 }) => {
     const theme = useTheme();
+    const { t } = useLanguage();
     const [selectedUnit, setSelectedUnit] = useState(getDefaultUnit(type, defaultUnit));
     const [value, setValue] = useState(_value);
     const [searchTerm, setSearchTerm] = useState('');
@@ -45,6 +47,7 @@ const UnitInput = ({
     const valueInputRef = useRef(null);
     const searchInputRef = useRef(null);
     const prevOutputRef = useRef(null);
+    const resolvedPlaceholder = placeholder ?? t('UnitInput.inputValuePlaceholder');
 
     // Ensure snapPoints update if snapTo changes
     const snapPoints = useMemo(() => [snapTo], [snapTo]);
@@ -141,7 +144,7 @@ const UnitInput = ({
                 <Input
                     ref={valueInputRef}
                     flex={1}
-                    placeholder={placeholder}
+                    placeholder={resolvedPlaceholder}
                     keyboardType='phone-pad'
                     value={value}
                     onChangeText={setValue}
@@ -197,7 +200,7 @@ const UnitInput = ({
                     <YStack px='$2'>
                         <BottomSheetTextInput
                             ref={searchInputRef}
-                            placeholder='Search unit'
+                            placeholder={t('UnitInput.searchUnitPlaceholder')}
                             onChangeText={setSearchTerm}
                             autoCapitalize='none'
                             autoComplete='off'

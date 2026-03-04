@@ -5,12 +5,14 @@ import { KeyboardAvoidingView, Platform } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faCamera, faPlus, faPaperPlane } from '@fortawesome/free-solid-svg-icons';
 import useAppTheme from '../hooks/use-app-theme';
+import { useLanguage } from '../contexts/LanguageContext';
 import CameraCapture from './CameraCapture';
 
 const INPUT_MIN_HEIGHT = 40;
 const INPUT_MAX_HEIGHT = 120;
 const ChatKeyboard = ({ onSend, onAttach, onCamera, onFocus, onBlur }) => {
     const { isDarkMode } = useAppTheme();
+    const { t } = useLanguage();
     const theme = useTheme();
     const headerHeight = useHeaderHeight();
     const [message, setMessage] = useState('');
@@ -69,7 +71,7 @@ const ChatKeyboard = ({ onSend, onAttach, onCamera, onFocus, onBlur }) => {
                             maxHeight={INPUT_MAX_HEIGHT}
                             textAlignVertical='top'
                             lineHeight={20}
-                            placeholder='Type a message'
+                            placeholder={t('Chat.typeMessagePlaceholder')}
                             multiline
                             backgroundColor='$surface'
                             borderColor='$borderColor'
@@ -85,9 +87,9 @@ const ChatKeyboard = ({ onSend, onAttach, onCamera, onFocus, onBlur }) => {
                     </YStack>
                     <XStack px='$2' gap='$1'>
                         {message.trim() ? (
-                            <Button onPress={handleSend} circular size={32} bg='$success' borderWidth={1} borderColor='$successBorder' alignItems='center' justifyContent='center'>
+                            <Button onPress={handleSend} circular size={32} bg='$primary' borderWidth={1} borderColor='$primaryBorder' alignItems='center' justifyContent='center'>
                                 <Button.Icon>
-                                    <FontAwesomeIcon icon={faPaperPlane} size={14} color={theme['$successText'].val} />
+                                    <FontAwesomeIcon icon={faPaperPlane} size={14} color={theme.primaryText.val} />
                                 </Button.Icon>
                             </Button>
                         ) : (

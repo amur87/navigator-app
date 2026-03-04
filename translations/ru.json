@@ -17,7 +17,15 @@
         "confirmation": "Подтверждение",
         "ok": "ОК",
         "done": "Готово",
-        "tryAgain": "Попробовать снова"
+        "tryAgain": "Попробовать снова",
+        "remove": "Удалять",
+        "unselect": "Отменить выбор",
+        "select": "Выбирать",
+        "unavailable": "Недоступно",
+        "error": "Ошибка",
+        "reset": "Перезагрузить",
+        "yes": "Да",
+        "storefront": "Storefront"
     },
     "orderStatuses": {
         "created": "Создан",
@@ -56,10 +64,12 @@
         "schemeChanged": "Теперь используется режим {{selectedScheme}}.",
         "languageChanged": "Теперь используется язык: {{selectedLanguage}}.",
         "photoChanged": "Фото профиля изменено.",
-        "photoRemoved": "Фото профиля удалено."
+        "photoRemoved": "Фото профиля удалено.",
+        "propertyChangesSaved": "Изменения для «{{propertyName}}» сохранены."
     },
     "ProfileScreen": {
-        "organizationChanged": "Переключено на организацию {{selectedOrganization}}."
+        "organizationChanged": "Переключено на организацию {{selectedOrganization}}.",
+        "noOrganizations": "Организации не найдены"
     },
     "AddNewLocationScreen": {
         "addNewAddress": "Добавить новый адрес",
@@ -84,5 +94,194 @@
         "locationBlockedPrompt": "Доступ к геолокации заблокирован. Откройте настройки и включите его, чтобы продолжить.",
         "goToSettings": "Перейти в настройки",
         "skipForNow": "Пропустить"
+    },
+    "Chat": {
+        "removeParticipantConfirmation": "Удалить этого участника из чата?",
+        "removeParticipant": "Удалить участника",
+        "participants": "Участники",
+        "addParticipant": "Добавить участника",
+        "selectParticipant": "Выберите участника",
+        "createChannelNameRequired": "Введите название канала",
+        "newChannelCreated": "Создан новый чат-канал",
+        "createNewChat": "Создать новый чат",
+        "channelName": "Название канала",
+        "inputChatChannelNamePlaceholder": "Введите название канала",
+        "selectParticipants": "Выберите участников"
+    },
+    "Auth": {
+        "LoginScreen": {
+            "invalidPhoneNumber": "Введите действительный номер телефона",
+            "welcomeTitle": "Добро пожаловать в доставку макс.",
+            "chooseLanguage": "Выберите предпочитаемый язык приложения ниже",
+            "registerButtonText": "Зарегистрироваться"
+        },
+        "CreateAccountScreen": {
+            "title": "Зарегистрироваться",
+            "nameInputPlaceholder": "Введите свое имя",
+            "sendVerificationCodeButtonText": "Отправить код",
+            "haveAccountLoginButtonText": "У меня уже есть аккаунт",
+            "codeRequiredError": "Введите код подтверждения",
+            "missingPhoneError": "Номер телефона не найден",
+            "awaitingVerificationTitle": "Введите код, отправленный на {{name}}.",
+            "verifyCodeButtonText": "Подтверждать",
+            "retryButtonText": "Повторить попытку"
+        }
+    },
+    "Account": {
+        "AccountScreen": {
+            "organization": "Организация"
+        }
+    },
+    "DriverDashboard": {
+        "onlineStatusOn": "Работаю",
+        "onlineStatusOff": "Отдыхаю",
+        "location": "Расположение",
+        "go": "Идти",
+        "activeOrdersOnMap": "Активные заказы на карте",
+        "activeOrders": "Активные заказы",
+        "speed": "Скорость"
+    },
+    "DriverOrderManagement": {
+        "activeOrdersCount": "Активные заказы: {{count}}",
+        "noCurrentOrdersForDate": "Нет текущих заказов на выбранную дату",
+        "ordersForDay": "Заказы на {{day}}",
+        "ordersCount": "Заказы: {{count}}",
+        "stopsLeft": "Остановка слева: {{count}}."
+    },
+    "Core": {
+        "IssueScreen": {
+            "issues": "Проблемы",
+            "status": "Статус",
+            "priority": "Приоритет",
+            "report": "Отчет",
+            "type": "Тип",
+            "category": "Категория",
+            "vehicleName": "Транспортное средство"
+        }
+    },
+    "DriverReport": {
+        "fuelReports": "Отчеты о топливе",
+        "issueOn": "Проблема создана",
+        "reporter": "Репортер",
+        "fuelReported": "Отчет о топливе создан.",
+        "noReports": "Нет отчетов",
+        "createNewReport": "Создать отчет"
+    },
+    "OrderScreen": {
+        "notAvailable": "Нет в наличии",
+        "id": "ID",
+        "internalId": "Внутренний идентификатор",
+        "trackingNumber": "Идентификационный номер",
+        "type": "Тип",
+        "waypointCompletedTitle": "Маршрутная точка завершена",
+        "waypointCompletedMessage": "Пройти к следующей путевой точке?",
+        "continueButtonText": "Продолжать",
+        "orderNotDispatchedTitle": "Заказ не отправлен",
+        "orderNotDispatchedMessage": "Заказ еще не отправлен",
+        "warningTitle": "Предупреждение",
+        "updatingActivity": "Обновление активности...",
+        "statusUpdatedTo": "Статус обновлен до {{status}}",
+        "startOrderButtonText": "Начать заказ",
+        "updateActivityButtonText": "Обновить статус",
+        "startNavigationButtonText": "Начать навигацию",
+        "orderInformation": "Информация о заказе",
+        "proofOfDelivery": "Доказательство доставки",
+        "dateCreated": "Создано в",
+        "dateScheduled": "Запланировано на",
+        "dateDispatched": "Отправлено в",
+        "orderRoute": "Маршрут",
+        "orderProgress": "Прогресс",
+        "currentDestination": "Текущий пункт назначения",
+        "nextDestination": "Следующий пункт назначения",
+        "totalDistance": "Общее расстояние",
+        "startTime": "Время начала",
+        "currentEta": "Текущее расчетное время прибытия",
+        "ect": "ECT",
+        "orderNotes": "Примечания",
+        "orderProof": "Доказательство",
+        "orderPayload": "Полезная нагрузка",
+        "customer": "Клиент",
+        "orderDocumentsAndFiles": "Документы и файлы",
+        "orderComments": "Комментарии"
+    },
+    "FuelReportForm": {
+        "odometer": "Одометр",
+        "volume": "Объем",
+        "cost": "Расходы"
+    },
+    "EditLocationCoord": {
+        "savePosition": "Сохранить позицию"
+    },
+    "EditLocation": {
+        "addressSaved": "Адрес сохранен.",
+        "defaultLocationSet": "Установлен адрес по умолчанию",
+        "locationDeleted": "Адрес удален.",
+        "unableSelectLocationType": "Невозможно выбрать тип местоположения",
+        "types": {
+            "apartment": "Квартира",
+            "house": "Дом",
+            "office": "Офис",
+            "hotel": "Отель",
+            "hospital": "Больница",
+            "school": "Школа",
+            "other": "Другой"
+        },
+        "address": "Адрес",
+        "locationType": "Тип местоположения",
+        "addressDetails": "Детали адреса",
+        "addAdditionalAddressDetails": "Добавьте дополнительные сведения об адресе",
+        "addressLabelOrName": "Адресная этикетка или имя",
+        "streetAddressOrPoBox": "Адрес или почтовый ящик",
+        "addressLine2": "Адресная строка 2",
+        "optional": "Необязательный",
+        "neighborhood": "Район",
+        "cityOrTown": "Город или город",
+        "postalOrZipCode": "Почтовый индекс",
+        "additionalInstructions": "Дополнительные инструкции",
+        "whereShouldMeet": "Где нам следует встретиться?",
+        "makeDefaultAddress": "Сделать адрес по умолчанию",
+        "deleteAddress": "Удалить адрес",
+        "saveAddress": "Сохранить адрес"
+    },
+    "EntityScreen": {
+        "details": "Подробности",
+        "sku": "SKU",
+        "dimensions": "Размеры",
+        "weight": "Масса"
+    },
+    "FuelReportScreen": {
+        "confirmDeletionTitle": "Удалить отчет о топливе?",
+        "confirmDeletionMessage": "Это действие нельзя отменить.",
+        "deleteFuelReport": "Удалить отчет о топливе",
+        "deletingFuelReport": "Удаление отчета о топливе..."
+    },
+    "IssueScreen": {
+        "reportLocation": "Сообщить о местоположении",
+        "confirmDeletionTitle": "Удалить задачу?",
+        "confirmDeletionMessage": "Это действие нельзя отменить.",
+        "deleteIssue": "Удалить проблему",
+        "deletingIssue": "Удаление проблемы..."
+    },
+    "AdhocOrder": {
+        "acceptTitle": "Принять заказ?",
+        "acceptMessage": "Вы хотите принять этот заказ?",
+        "accept": "Принимать",
+        "dismissTitle": "Отменить приказ?",
+        "dismissMessage": "Вы хотите отменить этот приказ?",
+        "acceptOrder": "Принять заказ",
+        "dismissOrder": "Отклонить заказ"
+    },
+    "ProofOfDelivery": {
+        "capturingProof": "Собираем доказательства...",
+        "unableValidateQr": "Невозможно проверить QR-код",
+        "signatureSaveError": "Не удалось сохранить подпись",
+        "unableUploadPhotos": "Невозможно загрузить фотографии"
+    },
+    "DriverMenu": {
+        "home": "Главная",
+        "orders": "Заказы",
+        "reports": "Отчеты",
+        "chat": "Чат",
+        "account": "Аккаунт"
     }
 }

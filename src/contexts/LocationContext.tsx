@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useCallback, useContext, useMemo } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useContext, useMemo, useRef } from 'react';
 import BackgroundGeolocation from 'react-native-background-geolocation';
 import BackgroundFetch from 'react-native-background-fetch';
 import { Place, Point } from '@fleetbase/sdk';
@@ -20,6 +20,7 @@ export const LocationProvider = ({ children }) => {
     const [authToken] = useStorage('_driver_token');
     const [location, setLocation] = useStorage(`${driver?.id ?? 'anon'}_location`, {});
     const [isTracking, setIsTracking] = useState(false);
+    const isOnlineRef = useRef(isOnline);
 
     // Manually track location
     const trackLocation = useCallback(async () => {
@@ -66,7 +67,7 @@ export const LocationProvider = ({ children }) => {
             headers: {
                 Authorization: `Bearer ${authToken}`,
                 'Content-Type': 'application/json',
-                'User-Agent': '@fleetbase/navigator-app',
+                'User-Agent': config('APP_NAME', 'Delivery Max'),
             },
             httpRootProperty: '.',
             locationTemplate:
@@ -112,6 +113,11 @@ export const LocationProvider = ({ children }) => {
         });
     }, []);
 
+    // Keep ref in sync so the ready() callback reads the latest value without being a dependency.
+    useEffect(() => {
+        isOnlineRef.current = isOnline;
+    }, [isOnline]);
+
     useEffect(() => {
         if (!driver) return;
 
@@ -133,7 +139,7 @@ export const LocationProvider = ({ children }) => {
             },
             (state) => {
                 console.log('[BackgroundGeolocation] is ready:', state);
-                if (isOnline) {
+                if (isOnlineRef.current) {
                     startTracking();
                 }
             }
@@ -149,7 +155,7 @@ export const LocationProvider = ({ children }) => {
         return () => {
             BackgroundGeolocation.removeListeners();
         };
-    }, [driver, onLocation, onLocationError, onMotionChange, isOnline, getHttpConfig]);
+    }, [driver, onLocation, onLocationError, onMotionChange, getHttpConfig]);
 
     // Configure BackgroundFetch for periodic tasks.
     useEffect(() => {

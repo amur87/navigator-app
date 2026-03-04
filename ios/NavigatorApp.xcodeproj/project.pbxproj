@@ -282,7 +282,7 @@
 				DEVELOPMENT_TEAM = W4M54N7H85;
 				ENABLE_BITCODE = NO;
 				INFOPLIST_FILE = NavigatorApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Navigator;
+				INFOPLIST_KEY_CFBundleDisplayName = "Delivery Max";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -314,7 +314,7 @@
 				CURRENT_PROJECT_VERSION = 11;
 				DEVELOPMENT_TEAM = W4M54N7H85;
 				INFOPLIST_FILE = NavigatorApp/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = Navigator;
+				INFOPLIST_KEY_CFBundleDisplayName = "Delivery Max";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.navigation";
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (

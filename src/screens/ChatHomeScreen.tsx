@@ -1,7 +1,7 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useCallback } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { FlatList, RefreshControl, Pressable, Platform } from 'react-native';
-import { Text, YStack, XStack, Button, Avatar, Separator, useTheme } from 'tamagui';
+import { Text, YStack, XStack, Button, Separator, useTheme } from 'tamagui';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { last } from '../utils';
@@ -42,12 +42,12 @@ const ChatHomeScreen = () => {
 
         return (
             <Pressable onPress={() => handleOpenChannel(channel)}>
-                <XStack bg='$background' px='$4' py='$3'>
+                <XStack bg='$surface' px='$4' py='$3' borderRadius='$6' mx='$2' my='$1' borderWidth={1} borderColor='$borderColor'>
                     <YStack>
                         <ChatParticipantAvatar participant={otherParticipant} />
                     </YStack>
                     <YStack flex={1} px='$3'>
-                        <Text fontSize={16} color='$textPrimary' fontWeight='bold' numberOfLines={1} mb='$1'>
+                        <Text fontSize={16} color='$textPrimary' fontWeight='700' numberOfLines={1} mb='$1'>
                             {channel.title}
                         </Text>
                         <Text fontSize={13} color='$textSecondary' numberOfLines={2}>
@@ -55,21 +55,23 @@ const ChatHomeScreen = () => {
                         </Text>
                     </YStack>
                     <YStack alignItems='flex-end'>
-                        <Text fontSize={13} color={channel.unread_count > 0 ? '$successBorder' : '$textSecondary'} numberOfLines={2}>
+                        <Text fontSize={13} color='$textSecondary' numberOfLines={2}>
                             {formatWhatsAppTimestamp(new Date(lastMessageReceived))}
                         </Text>
                         {channel.unread_count > 0 && (
                             <YStack
                                 mt='$2'
-                                bg='$successBorder'
-                                width={20}
+                                bg='$primary'
+                                px='$2'
+                                minWidth={20}
                                 height={20}
                                 borderRadius={Platform.OS === 'android' ? 20 : '100%'}
                                 alignItems='center'
                                 justifyContent='center'
-                                textAlign='center'
                             >
-                                <Text color='$successText'>{channel.unread_count}</Text>
+                                <Text color='$primaryText' fontWeight='700'>
+                                    {channel.unread_count}
+                                </Text>
                             </YStack>
                         )}
                     </YStack>
@@ -96,7 +98,7 @@ const ChatHomeScreen = () => {
                 }
             };
 
-            if (loadedRef && loadedRef.current === false) {
+            if (loadedRef.current === false) {
                 getChannels();
                 loadedRef.current = true;
             }
@@ -139,33 +141,33 @@ const ChatHomeScreen = () => {
 
             return () => {
                 if (listenerRef.current) {
-                    for (let channelName in listenerRef.current) {
+                    for (const channelName in listenerRef.current) {
                         stopListening(channelName);
                     }
                 }
             };
-        }, [listen, channels, driver])
+        }, [listen, channels, driver, getChannels])
     );
 
     return (
-        <YStack flex={1} bg='$surface' borderTopWidth={0} borderColor='$borderColor'>
+        <YStack flex={1} bg='$background' borderTopWidth={0}>
             <XStack bg='$background' alignItems='center' justifyContent='space-between' px='$3' py='$4' borderBottomWidth={1} borderColor='$borderColor'>
                 <YStack>
-                    <Text color='$textPrimary' fontSize={26} fontWeight='bold'>
+                    <Text color='$textPrimary' fontSize={26} fontWeight='700'>
                         Chats
                     </Text>
                 </YStack>
                 <YStack>
-                    <Button onPress={() => navigation.navigate('CreateChatChannel')} circular size='$3' bg='$success' borderWidth={1} borderColor='$successBorder'>
+                    <Button onPress={() => navigation.navigate('CreateChatChannel')} circular size='$3' bg='$primary' borderWidth={1} borderColor='$primaryBorder'>
                         <Button.Icon>
-                            <FontAwesomeIcon icon={faPlus} color={theme['$successText'].val} />
+                            <FontAwesomeIcon icon={faPlus} color={theme.primaryText.val} />
                         </Button.Icon>
                     </Button>
                 </YStack>
             </XStack>
             <FlatList
                 data={channels}
-                refreshControl={<RefreshControl refreshing={isLoading} onRefresh={getChannels} tintColor={theme.textPrimary.val} />}
+                refreshControl={<RefreshControl refreshing={isLoading} onRefresh={getChannels} tintColor={theme.primary.val} />}
                 keyExtractor={(item) => item.id}
                 renderItem={renderChannel}
                 showsVerticalScrollIndicator={false}

@@ -1,20 +1,20 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { SafeAreaView, FlatList, Pressable } from 'react-native';
 import { Avatar, Text, YStack, XStack, Separator, useTheme } from 'tamagui';
 import { toast, ToastPosition } from '@backpackapp-io/react-native-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import { abbreviateName, navigatorConfig, showActionSheet } from '../utils';
+import { abbreviateName, showActionSheet } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import storage from '../utils/storage';
 
 const DriverProfileScreen = () => {
     const theme = useTheme();
     const navigation = useNavigation();
-    const { t } = useLanguage();
-    const { driver, logout, switchOrganization, organizations } = useAuth();
+    const { t, language } = useLanguage();
+    const isCyrillic = language.code === 'ru' || language.code === 'ky';
+    const { driver, switchOrganization, organizations } = useAuth();
 
     const handlePressMenuItem = useCallback(
         (item) => {
@@ -50,17 +50,17 @@ const DriverProfileScreen = () => {
                 }
             },
         });
-    }, [organizations]);
+    }, [organizations, switchOrganization, t]);
 
     const menuItems = useMemo(() => {
         const items = [
-            { id: '1', title: 'Account', screen: 'DriverAccount' },
+            { id: '1', title: t('AccountScreen.account'), screen: 'DriverAccount' },
             {
                 id: '2',
-                title: 'Organization',
+                title: t('Account.AccountScreen.organization'),
                 handler: () => handleSelectOrganization(),
                 rightComponent: (
-                    <Text color='$textSecondary' fontSize={13} numberOfLines={1}>
+                    <Text color='$textSecondary' fontSize={13} numberOfLines={1} fontFamily={isCyrillic ? undefined : 'Rubik-Medium'}>
                         {driver.getAttribute('company_name')}
                     </Text>
                 ),
@@ -68,13 +68,13 @@ const DriverProfileScreen = () => {
         ];
 
         return items.filter((item) => !item.hidden);
-    }, [driver]);
+    }, [driver, t, handleSelectOrganization, isCyrillic]);
 
     const renderMenuItem = ({ item }) => (
         <Pressable
             onPress={() => handlePressMenuItem(item)}
             style={({ pressed }) => ({
-                backgroundColor: pressed ? theme.secondary.val : theme.background.val,
+                backgroundColor: pressed ? theme.secondary.val : 'transparent',
                 padding: 16,
                 flexDirection: 'row',
                 alignItems: 'center',
@@ -83,7 +83,7 @@ const DriverProfileScreen = () => {
         >
             <XStack alignItems='center' space='$3'>
                 {item.leftComponent}
-                <Text fontSize='$6' fontWeight='bold' color='$textPrimary' numberOfLines={1}>
+                <Text fontSize='$6' fontWeight='700' color='$textPrimary' numberOfLines={1} fontFamily={isCyrillic ? undefined : 'Rubik-Bold'}>
                     {item.title}
                 </Text>
             </XStack>
@@ -97,34 +97,37 @@ const DriverProfileScreen = () => {
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: theme.background.val }}>
             <YStack flex={1} bg='$background' space='$3' padding='$5'>
-                <XStack py='$3' space='$3' alignItems='flex-start' justifyContent='space-between'>
-                    <YStack>
-                        <Pressable onPress={handleViewProfile}>
-                            <Avatar circular size='$4'>
-                                <Avatar.Image accessibilityLabel={driver.getAttribute('name')} src={driver.getAttribute('photo_url')} />
-                                <Avatar.Fallback delayMs={800} backgroundColor='$primary' textAlign='center' alignItems='center' justifyContent='center'>
-                                    <Text fontSize='$8' fontWeight='bold' color='$white' textTransform='uppercase' textAlign='center'>
-                                        {abbreviateName(driver.getAttribute('name'))}
-                                    </Text>
-                                </Avatar.Fallback>
-                            </Avatar>
-                        </Pressable>
-                    </YStack>
-                    <YStack flex={1}>
-                        <Text fontSize='$7' fontWeight='bold' color='$textPrimary' numberOfLines={1} mb='$1'>
-                            {driver.getAttribute('name')}
-                        </Text>
-                        <Text fontSize='$4' color='$textSecondary' numberOfLines={1}>
-                            {driver.getAttribute('company_name')}
-                        </Text>
-                    </YStack>
-                </XStack>
-                <YStack borderColor='$borderColorWithShadow' borderWidth={1} borderRadius='$4' overflow='hidden' bg='$surface'>
+                <YStack borderWidth={1} borderColor='$borderColor' bg='$surface' borderRadius='$7' px='$4' py='$4'>
+                    <XStack py='$1' space='$3' alignItems='flex-start' justifyContent='space-between'>
+                        <YStack>
+                            <Pressable onPress={handleViewProfile}>
+                                <Avatar circular size='$4'>
+                                    <Avatar.Image accessibilityLabel={driver.getAttribute('name')} src={driver.getAttribute('photo_url')} />
+                                    <Avatar.Fallback delayMs={800} backgroundColor='$primary' textAlign='center' alignItems='center' justifyContent='center'>
+                                        <Text fontSize='$8' fontWeight='bold' color='$primaryText' textTransform='uppercase' textAlign='center'>
+                                            {abbreviateName(driver.getAttribute('name'))}
+                                        </Text>
+                                    </Avatar.Fallback>
+                                </Avatar>
+                            </Pressable>
+                        </YStack>
+                        <YStack flex={1}>
+                            <Text fontSize='$7' fontWeight='700' color='$textPrimary' numberOfLines={1} mb='$1' fontFamily={isCyrillic ? undefined : 'Rubik-Bold'}>
+                                {driver.getAttribute('name')}
+                            </Text>
+                            <Text fontSize='$4' color='$textSecondary' numberOfLines={1}>
+                                {driver.getAttribute('company_name')}
+                            </Text>
+                        </YStack>
+                    </XStack>
+                </YStack>
+
+                <YStack borderColor='$borderColor' borderWidth={1} borderRadius='$6' overflow='hidden' bg='$surface'>
                     <FlatList
                         data={menuItems}
                         keyExtractor={(item) => item.id}
                         renderItem={renderMenuItem}
-                        ItemSeparatorComponent={() => <Separator borderBottomWidth={1} borderColor='$borderColorWithShadow' />}
+                        ItemSeparatorComponent={() => <Separator borderBottomWidth={1} borderColor='$borderColor' />}
                         scrollEnabled={false}
                         showsVerticalScrollIndicator={false}
                         showsHorizontalScrollIndicator={false}
