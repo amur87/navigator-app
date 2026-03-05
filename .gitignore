@@ -94,3 +94,24 @@ navigator.config.js
 .tamagui
 vendor
 *.pxd
+
+# Local Android configuration / caches
+android/local.properties
+android/.gradle-user/
+
+# Local debug artifacts (screenshots/dumps)
+/auth_check*.png
+/auth_input*.png
+/boot_check.png
+/check_cursor*.png
+/cursor_*.png
+/emulator_screen*.png
+/emulator_screen*.jpg
+/final_mask_limit_border.png
+/preview_*.png
+/release_cursor_check.png
+/tmp_*.txt
+/tmp_*.png
+/tmp_*.jpg
+/window_*.xml
+/window_dump*.xml

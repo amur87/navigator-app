@@ -41,10 +41,18 @@ const LocationPermissionScreen: React.FC = () => {
         useCallback(() => {
             if (Platform.OS === 'web') return;
             (async () => {
-                const perm = PERMISSIONS.IOS.LOCATION_WHEN_IN_USE;
-                const status = await check(perm);
-                if (status === RESULTS.GRANTED) {
+                const finePerm = Platform.OS === 'ios' ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
+                const fineStatus = await check(finePerm);
+                if (fineStatus === RESULTS.GRANTED) {
                     finish(true);
+                    return;
+                }
+
+                if (Platform.OS === 'android') {
+                    const coarseStatus = await check(PERMISSIONS.ANDROID.ACCESS_COARSE_LOCATION);
+                    if (coarseStatus === RESULTS.GRANTED) {
+                        finish(true);
+                    }
                 }
             })();
         }, [finish])
@@ -75,7 +83,7 @@ const LocationPermissionScreen: React.FC = () => {
     return (
         <YStack flex={1} bg='$background' pt={insets.top} pb={insets.bottom} alignItems='center' justifyContent='center' padding='$6'>
             <YStack alignItems='center' justifyContent='center'>
-                <Image source={require('../../assets/images/isometric-geolocation-1.png')} width={360} height={360} resizeMode='contain' />
+                <Image source={require('../../assets/images/courier.png')} width={360} height={360} resizeMode='contain' />
             </YStack>
 
             <Text fontSize='$8' fontWeight='bold' color='$textPrimary' mb='$2' textAlign='center'>
@@ -85,7 +93,16 @@ const LocationPermissionScreen: React.FC = () => {
                 {t('LocationPermissionScreen.enableLocationPrompt')}
             </Text>
 
-            <Button size='$5' bg='$primary' color='$white' width='100%' onPress={requestLocationPermission} icon={<FontAwesomeIcon icon={faMapMarkerAlt} color='white' />}>
+            <Button
+                size='$5'
+                bg='#112b66'
+                borderWidth={1}
+                borderColor='#112b66'
+                color='$white'
+                width='100%'
+                onPress={requestLocationPermission}
+                icon={<FontAwesomeIcon icon={faMapMarkerAlt} color='#FFFFFF' />}
+            >
                 <Button.Text color='$white'>{t('LocationPermissionScreen.shareAndContinue')}</Button.Text>
             </Button>
 

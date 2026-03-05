@@ -1,4 +1,4 @@
-package io.fleetbase.navigator
+package io.delivery.max
 
 import android.os.Bundle
 import com.facebook.react.ReactActivity

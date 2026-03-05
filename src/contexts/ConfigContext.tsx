@@ -5,7 +5,7 @@ import { navigatorConfig, config, toBoolean, get } from '../utils';
 
 const ConfigContext = createContext();
 const DEFAULT_FLEETBASE_HOST = 'https://api-delivery.max.kg';
-const DEFAULT_FLEETBASE_KEY = '$2y$10$CaqVTTfyZg9T5Awle5dNt.xH71jN3N92x0Ye458mq./x9ExqLza0K';
+const DEFAULT_FLEETBASE_KEY = 'flb_live_eH6tlC0R3Twu2ogNMV1o';
 
 const normalizeConfigValue = (value: any) => {
     if (typeof value !== 'string') return value;

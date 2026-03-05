@@ -33,9 +33,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
     
-    namespace "io.fleetbase.navigator"
+    namespace "io.delivery.max"
     defaultConfig {
-        applicationId "io.fleetbase.navigator"
+        applicationId "io.delivery.max"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -44,12 +44,12 @@ android {
         manifestPlaceholders = [
             appLinkScheme: "navigator"
         ]
-        resValue "string", "build_config_package", "io.fleetbase.navigator"
+        resValue "string", "build_config_package", "io.delivery.max"
         // Fallbacks for debug/local builds when env-driven values are not provided.
         resValue "string", "TRANSISTORSOFT_LICENSE_KEY", transistorsoftLicenseKey
         resValue "string", "FACEBOOK_APP_ID", ""
         resValue "string", "FACEBOOK_CLIENT_TOKEN", ""
-        resValue "string", "GOOGLE_MAPS_API_KEY", ""
+        resValue "string", "GOOGLE_MAPS_API_KEY", "AIzaSyBDssDTm94rQBVf8hsFj8RM8viyTsM36x4"
     }
     signingConfigs {
         debug {

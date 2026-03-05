@@ -1,4 +1,4 @@
-package io.fleetbase.navigator
+package io.delivery.max
 
 import android.app.Application
 import com.facebook.react.PackageList

@@ -14,23 +14,24 @@ const useFleetbase = () => {
         const host = resolveConnectionConfig('FLEETBASE_HOST');
         const key = resolveConnectionConfig('FLEETBASE_KEY');
         const hasHost = typeof host === 'string' && host.trim().length > 0;
-        const hasTokenOrKey = typeof authToken === 'string' && authToken.trim().length > 0 ? true : typeof key === 'string' && key.trim().length > 0;
+        const hasKey = typeof key === 'string' && key.trim().length > 0;
 
-        return hasHost && hasTokenOrKey;
-    }, [resolveConnectionConfig, authToken]);
+        return hasHost && hasKey;
+    }, [resolveConnectionConfig]);
 
     const initializeFleetbase = useCallback(() => {
         const host = resolveConnectionConfig('FLEETBASE_HOST');
         const key = resolveConnectionConfig('FLEETBASE_KEY');
-        const tokenOrKey = typeof authToken === 'string' && authToken.trim().length > 0 ? authToken : key;
 
-        if (typeof host !== 'string' || host.trim().length === 0 || typeof tokenOrKey !== 'string' || tokenOrKey.trim().length === 0) {
+        // Fleetbase SDK expects a public key on initialization.
+        // Driver auth tokens are applied to the adapter header after init.
+        if (typeof host !== 'string' || host.trim().length === 0 || typeof key !== 'string' || key.trim().length === 0) {
             setFleetbase(null);
             return;
         }
 
         try {
-            const instance = new Fleetbase(tokenOrKey, { host });
+            const instance = new Fleetbase(key, { host });
             setFleetbase(instance);
             setError(null);
         } catch (initializationError) {
@@ -38,7 +39,7 @@ const useFleetbase = () => {
             setError(initializationError as Error);
             console.warn('[useFleetbase] Failed to initialize SDK:', initializationError);
         }
-    }, [resolveConnectionConfig, authToken]);
+    }, [resolveConnectionConfig]);
 
     const hasFleetbaseConfig = useCallback(() => {
         return hasValidConnectionConfig();
@@ -50,9 +51,25 @@ const useFleetbase = () => {
 
     // Memoize the adapter so that its reference only changes when the fleetbase instance updates.
     const adapter = useMemo(() => {
-        if (!fleetbase) return null;
+        if (!fleetbase) {
+            return null;
+        }
         return fleetbase.getAdapter();
-    }, [fleetbase, authToken]);
+    }, [fleetbase]);
+
+    // Keep Authorization header in sync with the latest driver token.
+    useEffect(() => {
+        if (!adapter?.axiosInstance?.defaults?.headers) {
+            return;
+        }
+
+        const key = resolveConnectionConfig('FLEETBASE_KEY');
+        const token = typeof authToken === 'string' && authToken.trim().length > 0 ? authToken.trim() : null;
+        const publicKey = typeof key === 'string' ? key.trim() : '';
+        const bearer = token ?? publicKey;
+
+        adapter.axiosInstance.defaults.headers.Authorization = `Bearer ${bearer}`;
+    }, [adapter, authToken, resolveConnectionConfig]);
 
     // Memoize the returned object to prevent unnecessary re-renders.
     const api = useMemo(
@@ -62,7 +79,7 @@ const useFleetbase = () => {
             error,
             hasFleetbaseConfig,
         }),
-        [fleetbase, adapter, error, authToken, hasFleetbaseConfig]
+        [fleetbase, adapter, error, hasFleetbaseConfig]
     );
 
     return api;

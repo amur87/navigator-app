@@ -14,7 +14,7 @@ const BootScreen = ({ route }) => {
     const navigation = useNavigation();
     const { isAuthenticated } = useAuth();
     const [error, setError] = useState<Error | null>(null);
-    const scale = useRef(new Animated.Value(0.7)).current;
+    const scale = useRef(new Animated.Value(0.82)).current;
     const { width: screenWidth } = useWindowDimensions();
     const logoWidth = Math.min(screenWidth - 48, 180);
     const logoHeight = 72;
@@ -50,12 +50,21 @@ const BootScreen = ({ route }) => {
             }
 
             const checkLocationPermission = async () => {
-                const permission = Platform.OS === 'ios' ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
+                const finePermission = Platform.OS === 'ios' ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
+                const fineResult = await check(finePermission);
 
-                const result = await check(permission);
-                if (result === RESULTS.GRANTED) {
+                // On Android, users can grant only approximate location (coarse). That should not block app launch.
+                if (fineResult === RESULTS.GRANTED) {
                     initializeNavigator();
                 } else {
+                    if (Platform.OS === 'android') {
+                        const coarseResult = await check(PERMISSIONS.ANDROID.ACCESS_COARSE_LOCATION);
+                        if (coarseResult === RESULTS.GRANTED) {
+                            initializeNavigator();
+                            return;
+                        }
+                    }
+
                     later(() => BootSplash.hide(), 300);
                     // If the locationEnabled flag is set meaning not null or undefined then initialize navigator
                     if (locationEnabled !== undefined && locationEnabled !== null) {
@@ -71,12 +80,21 @@ const BootScreen = ({ route }) => {
     );
 
     useEffect(() => {
-        Animated.sequence([
-            Animated.timing(scale, { toValue: 1.15, duration: 900, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-            Animated.timing(scale, { toValue: 1.0, duration: 450, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        ]).start(() => {
-            later(() => BootSplash.hide(), 200);
-        });
+        // Hide the native splash ASAP so our JS animation is visible.
+        later(() => BootSplash.hide({ fade: true }), 50);
+
+        // Subtle "breathing" effect while the app is initializing.
+        const loop = Animated.loop(
+            Animated.sequence([
+                Animated.timing(scale, { toValue: 1.02, duration: 650, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+                Animated.timing(scale, { toValue: 0.96, duration: 650, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
+            ])
+        );
+
+        loop.start();
+        return () => {
+            loop.stop();
+        };
     }, [scale]);
 
     if (error) {

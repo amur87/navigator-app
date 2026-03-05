@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      Android 12+ masks the splash "animated icon" into a circle.
+      Add padding so our wide logo isn't clipped by the mask.
+    -->
+    <item android:gravity="center">
+        <inset
+            android:insetLeft="56dp"
+            android:insetTop="56dp"
+            android:insetRight="56dp"
+            android:insetBottom="56dp">
+            <bitmap
+                android:gravity="center"
+                android:src="@mipmap/bootsplash_logo"
+                android:tileMode="disabled" />
+        </inset>
+    </item>
+</layer-list>
+

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!--
+      Ensure the splash logo keeps its original proportions on all Android versions.
+      The system splash screen can apply its own scaling; this centers the bitmap without stretching.
+    -->
+    <item android:gravity="center">
+        <bitmap
+            android:gravity="center"
+            android:src="@mipmap/bootsplash_logo"
+            android:tileMode="disabled" />
+    </item>
+</layer-list>
+

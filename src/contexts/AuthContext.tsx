@@ -104,21 +104,23 @@ export const AuthProvider = ({ children }) => {
         return fleetbase;
     }, [fleetbase]);
 
-    // Reset auth only once on app start.
+    // Restore persisted session once the SDK adapter is ready.
+    // (Previously this was clearing storage on every cold start, which made auth "fall off".)
     useEffect(() => {
         if (didInitAuthRef.current) {
+            return;
+        }
+
+        if (!adapter) {
             return;
         }
 
         didInitAuthRef.current = true;
 
         if (storedDriver) {
-            setStoredDriver(null);
+            setDriver(storedDriver);
         }
-
-        setAuthToken(null);
-        dispatch({ type: 'RESTORE_SESSION', driver: null });
-    }, [storedDriver, setStoredDriver, setAuthToken]);
+    }, [adapter, setDriver, storedDriver]);
 
     const setDriver = useCallback(
         (newDriver) => {

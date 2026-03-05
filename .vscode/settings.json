@@ -16,5 +16,6 @@
     },
     "[swift]": {
         "editor.defaultFormatter": "vknabel.vscode-swiftformat"
-    }
+    },
+    "git.ignoreLimitWarning": true
 }
