@@ -1,181 +1,250 @@
-import { useRef, useCallback } from 'react';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { FlatList, RefreshControl, Pressable, Platform } from 'react-native';
-import { Text, YStack, XStack, Button, Separator, useTheme } from 'tamagui';
+﻿import React, { useCallback, useEffect, useRef } from 'react';
+import { FlatList, Pressable, RefreshControl, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
-import { last } from '../utils';
-import { formatWhatsAppTimestamp } from '../utils/format';
+import { faComments, faLock } from '@fortawesome/free-solid-svg-icons';
+import GlassHeader from '../components/GlassHeader';
+import { format, isToday, isYesterday } from 'date-fns';
 import { useChat } from '../contexts/ChatContext';
-import { useAuth } from '../contexts/AuthContext';
-import useSocketClusterClient from '../hooks/use-socket-cluster-client';
 import ChatParticipantAvatar from '../components/ChatParticipantAvatar';
+import { getMaterialRipple } from '../utils/material-ripple';
+
+const formatRoomTime = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+    if (isToday(date)) {
+        return format(date, 'HH:mm');
+    }
+    if (isYesterday(date)) {
+        return 'вчера';
+    }
+    return format(date, 'dd.MM');
+};
 
 const ChatHomeScreen = () => {
-    const theme = useTheme();
-    const navigation = useNavigation();
-    const { channels, getChannels, setCurrentChannel, isLoading } = useChat();
-    const { driver } = useAuth();
-    const { listen } = useSocketClusterClient();
-    const listenerRef = useRef({});
-    const loadedRef = useRef(false);
+    const navigation = useNavigation<any>();
+    const { channels, getChannels, setCurrentChannel, isLoading, capabilities, providerMode } = useChat();
+    const getChannelsRef = useRef(getChannels);
 
-    const handleOpenChannel = (channel) => {
-        setCurrentChannel(channel);
-        navigation.navigate('ChatChannel', { channel });
-    };
-
-    const renderChannel = ({ item: channel }) => {
-        const lastParticipant = last(channel.participants);
-        const otherParticipant = channel.participants.find((participant) => participant.user !== driver.getAttribute('user')) ?? lastParticipant;
-        const lastMessageReceived = channel.last_message ? channel.last_message.created_at : channel.created_at;
-        let lastMessageContent = 'No messages';
-
-        if (channel.last_message?.content) {
-            if (channel.participants.length > 2) {
-                const senderName = channel.last_message.sender?.name;
-                lastMessageContent = senderName ? `${senderName}: ${channel.last_message.content}` : channel.last_message.content;
-            } else {
-                lastMessageContent = channel.last_message.content;
-            }
-        }
-
-        return (
-            <Pressable onPress={() => handleOpenChannel(channel)}>
-                <XStack bg='$surface' px='$4' py='$3' borderRadius='$6' mx='$2' my='$1' borderWidth={1} borderColor='$borderColor'>
-                    <YStack>
-                        <ChatParticipantAvatar participant={otherParticipant} />
-                    </YStack>
-                    <YStack flex={1} px='$3'>
-                        <Text fontSize={16} color='$textPrimary' fontWeight='700' numberOfLines={1} mb='$1'>
-                            {channel.title}
-                        </Text>
-                        <Text fontSize={13} color='$textSecondary' numberOfLines={2}>
-                            {lastMessageContent}
-                        </Text>
-                    </YStack>
-                    <YStack alignItems='flex-end'>
-                        <Text fontSize={13} color='$textSecondary' numberOfLines={2}>
-                            {formatWhatsAppTimestamp(new Date(lastMessageReceived))}
-                        </Text>
-                        {channel.unread_count > 0 && (
-                            <YStack
-                                mt='$2'
-                                bg='$primary'
-                                px='$2'
-                                minWidth={20}
-                                height={20}
-                                borderRadius={Platform.OS === 'android' ? 20 : '100%'}
-                                alignItems='center'
-                                justifyContent='center'
-                            >
-                                <Text color='$primaryText' fontWeight='700'>
-                                    {channel.unread_count}
-                                </Text>
-                            </YStack>
-                        )}
-                    </YStack>
-                </XStack>
-            </Pressable>
-        );
-    };
+    useEffect(() => {
+        getChannelsRef.current = getChannels;
+    }, [getChannels]);
 
     useFocusEffect(
         useCallback(() => {
-            const listenForEvents = async (channelName, callback) => {
-                if (listenerRef.current && listenerRef.current[channelName]) return;
-
-                const listener = await listen(channelName, callback);
-                if (listener) {
-                    listenerRef.current[channelName] = listener;
-                }
-            };
-
-            const stopListening = (channelName) => {
-                if (listenerRef.current && listenerRef.current[channelName]) {
-                    listenerRef.current[channelName].stop();
-                    delete listenerRef.current[channelName];
-                }
-            };
-
-            if (loadedRef.current === false) {
-                getChannels();
-                loadedRef.current = true;
-            }
-
-            listenForEvents(`user.${driver.getAttribute('user')}`, (socketEvent) => {
-                switch (socketEvent.event) {
-                    case 'chat.participant_added':
-                    case 'chat_participant.created':
-                    case 'chat_channel.created':
-                        getChannels();
-                        break;
-                    case 'chat_channel.deleted':
-                    case 'chat.participant_removed':
-                    case 'chat_participant.deleted':
-                        getChannels();
-                        stopListening(`user.${driver.getAttribute('user')}`);
-                        break;
-                }
-            });
-
-            channels.forEach((channel) => {
-                const channelName = `chat.${channel.id}`;
-                listenForEvents(channelName, (socketEvent) => {
-                    switch (socketEvent.event) {
-                        case 'chat_message.created':
-                        case 'chat.added_participant':
-                        case 'chat_channel.created':
-                        case 'chat_receipt.created':
-                            getChannels();
-                            break;
-                        case 'chat_participant.deleted':
-                        case 'chat.removed_participant':
-                        case 'chat_channel.deleted':
-                            getChannels();
-                            stopListening(channelName);
-                            break;
-                    }
-                });
-            });
-
-            return () => {
-                if (listenerRef.current) {
-                    for (const channelName in listenerRef.current) {
-                        stopListening(channelName);
-                    }
-                }
-            };
-        }, [listen, channels, driver, getChannels])
+            getChannelsRef.current?.().catch((error) => console.warn('Unable to refresh chats:', error));
+        }, [])
     );
 
+    const handleOpenChannel = (channel: any) => {
+        setCurrentChannel(channel);
+        navigation.navigate('ChatChannel', { channelId: channel.id });
+    };
+
+    const insets = useSafeAreaInsets();
+    const topInset = Math.max(insets.top, 0);
+
     return (
-        <YStack flex={1} bg='$background' borderTopWidth={0}>
-            <XStack bg='$background' alignItems='center' justifyContent='space-between' px='$3' py='$4' borderBottomWidth={1} borderColor='$borderColor'>
-                <YStack>
-                    <Text color='$textPrimary' fontSize={26} fontWeight='700'>
-                        Chats
-                    </Text>
-                </YStack>
-                <YStack>
-                    <Button onPress={() => navigation.navigate('CreateChatChannel')} circular size='$3' bg='$primary' borderWidth={1} borderColor='$primaryBorder'>
-                        <Button.Icon>
-                            <FontAwesomeIcon icon={faPlus} color={theme.primaryText.val} />
-                        </Button.Icon>
-                    </Button>
-                </YStack>
-            </XStack>
+        <View style={styles.safeArea}>
+            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+            <GlassHeader
+                title="Чаты"
+                rightContent={
+                    <View style={styles.headerBadge}>
+                        <FontAwesomeIcon icon={faLock} size={10} color='#112b66' />
+                        <Text style={styles.headerBadgeText}>{capabilities.e2ee ? 'E2EE' : 'Secure'}</Text>
+                    </View>
+                }
+            />
+
             <FlatList
                 data={channels}
-                refreshControl={<RefreshControl refreshing={isLoading} onRefresh={getChannels} tintColor={theme.primary.val} />}
                 keyExtractor={(item) => item.id}
-                renderItem={renderChannel}
+                refreshControl={<RefreshControl refreshing={isLoading} onRefresh={getChannels} tintColor='#991A4E' />}
+                contentContainerStyle={[channels.length ? styles.listContent : styles.emptyContent, { paddingTop: topInset + 48 + 8 }]}
+                renderItem={({ item }) => (
+                    <Pressable onPress={() => handleOpenChannel(item)} style={styles.row} android_ripple={getMaterialRipple({ color: 'rgba(17,43,102,0.06)' })}>
+                        <ChatParticipantAvatar participant={{ avatarUrl: item.avatarUrl, avatarFallback: item.avatarFallback, isOnline: item.statusText === 'В сети', name: item.title }} size={54} />
+                        <View style={styles.rowBody}>
+                            <View style={styles.rowTop}>
+                                <Text style={styles.rowTitle} numberOfLines={1}>{item.title}</Text>
+                                <Text style={styles.rowTime}>{formatRoomTime(item.updatedAt)}</Text>
+                            </View>
+                            <View style={styles.rowBottom}>
+                                <Text style={styles.rowPreview} numberOfLines={2}>{item.lastMessagePreview || 'Нет сообщений'}</Text>
+                                {item.unreadCount > 0 ? (
+                                    <View style={styles.unreadBadge}>
+                                        <Text style={styles.unreadText}>{item.unreadCount > 99 ? '99+' : item.unreadCount}</Text>
+                                    </View>
+                                ) : null}
+                            </View>
+                        </View>
+                    </Pressable>
+                )}
+                ListHeaderComponent={
+                    <View style={styles.heroCard}>
+                        <View style={styles.heroIconWrap}>
+                            <FontAwesomeIcon icon={faComments} size={18} color='#991A4E' />
+                        </View>
+                        <View style={styles.heroBody}>
+                            <Text style={styles.heroTitle}>Поддержка, клиенты и диспетчер</Text>
+                            <Text style={styles.heroText}>Отдельный чат в стиле Telegram. Старые комнаты Fleetbase больше не должны попадать в этот список.</Text>
+                        </View>
+                    </View>
+                }
+                ListEmptyComponent={
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyTitle}>Чаты пока недоступны</Text>
+                        <Text style={styles.emptyText}>Экран работает только в Matrix-режиме. Если комнаты не появились, значит Matrix bootstrap еще не поднялся.</Text>
+                    </View>
+                }
                 showsVerticalScrollIndicator={false}
-                showsHorizontalScrollIndicator={false}
-                ItemSeparatorComponent={() => <Separator borderBottomWidth={1} borderColor='$borderColor' />}
             />
-        </YStack>
+        </View>
     );
 };
 
+const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#f2f3f7',
+    },
+    headerBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: 999,
+        backgroundColor: '#ffffff',
+    },
+    headerBadgeText: {
+        color: '#112b66',
+        fontSize: 12,
+        fontFamily: 'Rubik-Medium',
+    },
+    listContent: {
+        paddingHorizontal: 14,
+        paddingBottom: 24,
+    },
+    emptyContent: {
+        flexGrow: 1,
+        paddingHorizontal: 14,
+        paddingBottom: 24,
+    },
+    heroCard: {
+        marginBottom: 12,
+        borderRadius: 24,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        backgroundColor: '#ffffff',
+        flexDirection: 'row',
+        gap: 12,
+    },
+    heroIconWrap: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: 'rgba(153,26,78,0.10)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    heroBody: {
+        flex: 1,
+    },
+    heroTitle: {
+        color: '#111111',
+        fontSize: 15,
+        fontFamily: 'Rubik-Bold',
+        marginBottom: 4,
+    },
+    heroText: {
+        color: '#6e6e73',
+        fontSize: 13,
+        lineHeight: 18,
+        fontFamily: 'Rubik-Regular',
+    },
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        backgroundColor: '#ffffff',
+        borderRadius: 22,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        marginBottom: 10,
+        overflow: 'hidden',
+    },
+    rowBody: {
+        flex: 1,
+    },
+    rowTop: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+        gap: 10,
+    },
+    rowBottom: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
+    rowTitle: {
+        flex: 1,
+        color: '#111111',
+        fontSize: 16,
+        fontFamily: 'Rubik-Medium',
+    },
+    rowTime: {
+        color: '#989aa1',
+        fontSize: 12,
+        fontFamily: 'Rubik-Regular',
+    },
+    rowPreview: {
+        flex: 1,
+        color: '#6e6e73',
+        fontSize: 13,
+        lineHeight: 18,
+        fontFamily: 'Rubik-Regular',
+    },
+    unreadBadge: {
+        minWidth: 22,
+        height: 22,
+        borderRadius: 11,
+        paddingHorizontal: 6,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#991A4E',
+    },
+    unreadText: {
+        color: '#ffffff',
+        fontSize: 11,
+        fontFamily: 'Rubik-Bold',
+    },
+    emptyState: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 30,
+    },
+    emptyTitle: {
+        color: '#111111',
+        fontSize: 18,
+        fontFamily: 'Rubik-Bold',
+        marginBottom: 8,
+    },
+    emptyText: {
+        color: '#6e6e73',
+        fontSize: 14,
+        lineHeight: 20,
+        fontFamily: 'Rubik-Regular',
+        textAlign: 'center',
+    },
+});
+
 export default ChatHomeScreen;
+

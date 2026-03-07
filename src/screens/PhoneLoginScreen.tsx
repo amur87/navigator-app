@@ -109,7 +109,7 @@ const PhoneLoginScreen = () => {
                 <YStack space="$4" width="100%" maxWidth={420}>
                     <YStack alignItems="center" space="$3">
                         <Image source={require('../../assets/logo_primary.png')} style={{ width: 180, height: 72, resizeMode: 'contain' }} />
-                        <Text color="#112b66" textAlign="center" fontSize={14} lineHeight={20} fontFamily={isCyrillic ? undefined : 'Rubik-Bold'} fontWeight="800">
+                        <Text color="#112b66" textAlign="center" fontSize={14} lineHeight={20} fontFamily='Rubik-Bold' fontWeight="800">
                             {loginCopy.phoneEntryPrompt}
                         </Text>
                     </YStack>
@@ -132,7 +132,7 @@ const PhoneLoginScreen = () => {
                             inputColor="#112b66"
                             dialCodeColor="#112b66"
                             inputFontSize={18}
-                            inputFontFamily={isCyrillic ? undefined : 'Rubik-Bold'}
+                            inputFontFamily='Rubik-Bold'
                             inputFontWeight="800"
                             placeholderTextColor="rgba(17, 43, 102, 0.45)"
                             wrapperProps={{ space: '$2' }}
@@ -141,9 +141,9 @@ const PhoneLoginScreen = () => {
 
                     <PhoneLoginButton onPress={handleSendVerificationCode} disabled={isSendingCode} />
 
-                    <Text color="rgba(17, 43, 102, 0.7)" fontSize={12} textAlign="center" lineHeight={18} fontFamily={isCyrillic ? undefined : 'Rubik-Medium'}>
+                    <Text color="rgba(17, 43, 102, 0.7)" fontSize={12} textAlign="center" lineHeight={18} fontFamily='Rubik-Medium'>
                         {loginCopy.privacyAgreementPrefix}{' '}
-                        <Text color="#112b66" textDecorationLine="underline" onPress={handleOpenPrivacyPolicy} fontFamily={isCyrillic ? undefined : 'Rubik-Medium'}>
+                        <Text color="#112b66" textDecorationLine="underline" onPress={handleOpenPrivacyPolicy} fontFamily='Rubik-Medium'>
                             {loginCopy.privacyPolicyLinkText}
                         </Text>
                     </Text>

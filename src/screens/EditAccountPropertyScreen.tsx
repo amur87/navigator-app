@@ -77,7 +77,7 @@ const EditAccountPropertyScreen = ({ route }) => {
             <YStack flex={1} bg='$background' space='$3' padding='$5'>
                 <XStack space='$3' alignItems='center' mb='$5'>
                     <BackButton />
-                    <Text color='$textPrimary' fontWeight='bold' fontSize='$8' numberOfLines={1} fontFamily={isCyrillic ? undefined : 'Rubik-Bold'}>
+                    <Text color='$textPrimary' fontWeight='bold' fontSize='$8' numberOfLines={1} fontFamily='Rubik-Bold'>
                         {property.name}
                     </Text>
                 </XStack>
@@ -90,7 +90,7 @@ const EditAccountPropertyScreen = ({ route }) => {
                 <XStack position='absolute' bottom={0} left={0} right={0} padding='$5'>
                     <Button onPress={handleUpdateProperty} size='$5' bg='$primary' flex={1} opacity={mutated ? 1 : 0.75} disabled={!mutated}>
                         <Button.Icon>{isLoading() && <Spinner color='$textPrimary' />}</Button.Icon>
-                        <Button.Text color='$textPrimary' fontWeight='bold' fontSize='$5' fontFamily={isCyrillic ? undefined : 'Rubik-Bold'}>
+                        <Button.Text color='$textPrimary' fontWeight='bold' fontSize='$5' fontFamily='Rubik-Bold'>
                             {t('common.save')}
                         </Button.Text>
                     </Button>

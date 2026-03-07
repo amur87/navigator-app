@@ -98,20 +98,20 @@ vendor
 # Local Android configuration / caches
 android/local.properties
 android/.gradle-user/
+android/key.properties
 
-# Local debug artifacts (screenshots/dumps)
-/auth_check*.png
-/auth_input*.png
-/boot_check.png
-/check_cursor*.png
-/cursor_*.png
-/emulator_screen*.png
-/emulator_screen*.jpg
-/final_mask_limit_border.png
-/preview_*.png
-/release_cursor_check.png
-/tmp_*.txt
-/tmp_*.png
-/tmp_*.jpg
-/window_*.xml
-/window_dump*.xml
+# Local debug artifacts (screenshots/dumps/logs)
+*.png
+*.xml
+!android/**/*.xml
+!ios/**/*.xml
+!**/src/**/*.xml
+*.log
+/nul
+/matrix_sync.json
+/phone_*.txt
+/dev-proxy.log
+/metro*.log
+/gradle-assemble-debug.log
+/package-lock.json
+.claude/

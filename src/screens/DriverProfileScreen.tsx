@@ -60,7 +60,7 @@ const DriverProfileScreen = () => {
                 title: t('Account.AccountScreen.organization'),
                 handler: () => handleSelectOrganization(),
                 rightComponent: (
-                    <Text color='$textSecondary' fontSize={13} numberOfLines={1} fontFamily={isCyrillic ? undefined : 'Rubik-Medium'}>
+                    <Text color='$textSecondary' fontSize={13} numberOfLines={1} fontFamily='Rubik-Medium'>
                         {driver.getAttribute('company_name')}
                     </Text>
                 ),
@@ -83,7 +83,7 @@ const DriverProfileScreen = () => {
         >
             <XStack alignItems='center' space='$3'>
                 {item.leftComponent}
-                <Text fontSize='$6' fontWeight='700' color='$textPrimary' numberOfLines={1} fontFamily={isCyrillic ? undefined : 'Rubik-Bold'}>
+                <Text fontSize='$6' fontWeight='700' color='$textPrimary' numberOfLines={1} fontFamily='Rubik-Bold'>
                     {item.title}
                 </Text>
             </XStack>
@@ -112,7 +112,7 @@ const DriverProfileScreen = () => {
                             </Pressable>
                         </YStack>
                         <YStack flex={1}>
-                            <Text fontSize='$7' fontWeight='700' color='$textPrimary' numberOfLines={1} mb='$1' fontFamily={isCyrillic ? undefined : 'Rubik-Bold'}>
+                            <Text fontSize='$7' fontWeight='700' color='$textPrimary' numberOfLines={1} mb='$1' fontFamily='Rubik-Bold'>
                                 {driver.getAttribute('name')}
                             </Text>
                             <Text fontSize='$4' color='$textSecondary' numberOfLines={1}>

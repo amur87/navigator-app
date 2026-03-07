@@ -151,7 +151,7 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
             const setLoadingFlag = options.setLoadingFlag ?? true;
             try {
                 nearbyOrdersPromiseRef.current = queryOrders(
-                    { nearby: driver.id, adhoc: 1, unassigned: 1, dispatched: 1, limit: -1, ...params },
+                    { nearby: driver.id, unassigned: 1, limit: -1, ...params },
                     setLoadingFlag ? setIsFetchingNearbyOrders : null
                 );
                 const fetchedOrders = await nearbyOrdersPromiseRef.current;
@@ -241,7 +241,7 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
             fetchRecentOrders(params, options);
             fetchNearbyOrders(params, options);
         },
-        [fetchActiveOrders, fetchRecentOrders]
+        [fetchActiveOrders, fetchRecentOrders, fetchNearbyOrders]
     );
 
     const reloadRecentOrders = useCallback(
@@ -275,7 +275,7 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
         (params = {}, options = {}) => {
             hasLoadedNearbyRef.current = false;
             nearbyOrdersPromiseRef.current = null;
-            fetchNearbyOrders(params);
+            fetchNearbyOrders(params, options);
         },
         [fetchNearbyOrders]
     );
@@ -296,6 +296,7 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
             reloadActiveOrders,
             reloadCurrentOrders,
             isFetchingActiveOrders,
+            isFetchingNearbyOrders,
             isFetchingRecentOrders,
             isFetchingCurrentOrders,
             activeOrderMarkedDates,
@@ -316,8 +317,12 @@ export const OrderManagerProvider: React.FC = ({ children }) => {
             nearbyOrders,
             adapter,
             reloadOrders,
+            reloadRecentOrders,
+            reloadActiveOrders,
+            reloadCurrentOrders,
             isFetchingActiveOrders,
             isFetchingRecentOrders,
+            isFetchingNearbyOrders,
             isFetchingCurrentOrders,
             activeOrderMarkedDates,
             fetchNearbyOrders,

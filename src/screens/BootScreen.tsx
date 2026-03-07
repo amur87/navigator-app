@@ -27,12 +27,11 @@ const BootScreen = ({ route }) => {
                 try {
                     later(() => {
                         try {
-                            // Any initialization processes will run here
-                            if (isAuthenticated) {
-                                navigation.navigate('DriverNavigator');
-                            } else {
-                                navigation.navigate('Login');
-                            }
+                            const targetRoute = isAuthenticated ? 'DriverNavigator' : 'Login';
+                            navigation.reset({
+                                index: 0,
+                                routes: [{ name: targetRoute }],
+                            });
                         } catch (err) {
                             console.warn('Failed to navigate to screen:', err);
                         }

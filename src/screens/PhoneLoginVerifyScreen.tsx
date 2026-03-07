@@ -1,19 +1,18 @@
-﻿import { useNavigation } from '@react-navigation/native';
-import React, { useEffect, useState } from 'react';
-import { Alert, Image, SafeAreaView } from 'react-native';
-import { Button, Text, XStack, YStack } from 'tamagui';
-import { toast } from '@backpackapp-io/react-native-toast';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+﻿import { toast } from '@backpackapp-io/react-native-toast';
 import { faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
+import { useNavigation } from '@react-navigation/native';
+import { useEffect, useRef, useState } from 'react';
+import { Alert, Image, SafeAreaView } from 'react-native';
 import { OtpInput } from 'react-native-otp-entry';
+import { Button, Text, XStack, YStack } from 'tamagui';
+import AuthBackButton from '../components/AuthBackButton';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import AuthBackButton from '../components/AuthBackButton';
 
 const PhoneLoginVerifyScreen = () => {
     const navigation = useNavigation<any>();
     const { language } = useLanguage();
-    const isCyrillic = language.code === 'ru' || language.code === 'ky';
     const localeCode = language.code === 'ru' || language.code === 'ky' ? language.code : 'en';
     const verifyCopy = {
         en: {
@@ -54,31 +53,30 @@ const PhoneLoginVerifyScreen = () => {
         },
     }[localeCode];
 
-    const { phone, verifyCode, login, isVerifyingCode, loginMethod, isAuthenticated } = useAuth();
+    const { phone, verifyCode, login, isVerifyingCode, loginMethod } = useAuth();
     const [code, setCode] = useState<string | null>(null);
+    const otpInputRef = useRef<any>(null);
     const [secondsLeft, setSecondsLeft] = useState(60);
     const [attempts, setAttempts] = useState(0);
     const [blocked, setBlocked] = useState(false);
+    const [retryTrigger, setRetryTrigger] = useState(0);
+    const [verifyError, setVerifyError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (blocked || secondsLeft <= 0) {
+        // Если пользователь заблокирован, таймер не нужен.
+        if (blocked) {
             return;
         }
 
-        const id = setInterval(() => {
-            setSecondsLeft((s) => (s > 0 ? s - 1 : 0));
+        // Устанавливаем интервал, который будет уменьшать счетчик каждую секунду.
+        const timerId = setInterval(() => {
+            setSecondsLeft((prevSeconds) => (prevSeconds > 0 ? prevSeconds - 1 : 0));
         }, 1000);
 
-        return () => clearInterval(id);
-    }, [secondsLeft, blocked]);
-
-    useEffect(() => {
-        if (!isAuthenticated) {
-            return;
-        }
-
-        navigation.reset({ index: 0, routes: [{ name: 'DriverNavigator' }] });
-    }, [isAuthenticated, navigation]);
+        // Функция очистки, которая остановит интервал.
+        // Она сработает при размонтировании компонента или при изменении зависимостей.
+        return () => clearInterval(timerId);
+    }, [blocked, retryTrigger]); // Зависимости, которые перезапускают таймер.
 
     const handleVerifyCode = async (value: string | null) => {
         if (isVerifyingCode || blocked) {
@@ -87,12 +85,15 @@ const PhoneLoginVerifyScreen = () => {
 
         const normalizedCode = (value ?? '').replace(/\D/g, '');
         if (normalizedCode.length !== 6) {
+            setVerifyError(verifyCopy.invalidCode);
             toast.error(verifyCopy.invalidCode);
             return;
         }
 
         try {
+            setVerifyError(null);
             await verifyCode(normalizedCode);
+            navigation.reset({ index: 0, routes: [{ name: 'DriverNavigator' }] });
         } catch (error) {
             const nextAttempts = attempts + 1;
             setAttempts(nextAttempts);
@@ -105,6 +106,7 @@ const PhoneLoginVerifyScreen = () => {
             }
 
             const message = error instanceof Error ? error.message : verifyCopy.invalidCode;
+            setVerifyError(message);
             toast.error(message);
         }
     };
@@ -118,7 +120,10 @@ const PhoneLoginVerifyScreen = () => {
         try {
             await login(phone);
             setSecondsLeft(60);
+            setRetryTrigger((val) => val + 1);
             setCode('');
+            otpInputRef.current?.clear();
+            setVerifyError(null);
         } catch (error) {
             const message = error instanceof Error ? error.message : verifyCopy.unableToSendSms;
             toast.error(message);
@@ -131,18 +136,24 @@ const PhoneLoginVerifyScreen = () => {
             <YStack flex={1} justifyContent="center" alignItems="center" space="$4" padding="$5">
                 <YStack mb="$3" alignItems="center">
                     <Image source={require('../../assets/logo_primary.png')} style={{ width: 180, height: 72, resizeMode: 'contain' }} />
-                    <Text color="#112b66" fontSize={18} fontFamily={isCyrillic ? undefined : 'Rubik-Bold'} fontWeight="700" textAlign="center" mt="$3">
+                    <Text color="#112b66" fontSize={18} fontFamily='Rubik-Bold' fontWeight="700" textAlign="center" mt="$3">
                         {verifyCopy.awaitingVerificationTitle}{' '}
-                        <Text color="#112b66" fontSize={18} fontFamily={isCyrillic ? undefined : 'Rubik-Bold'} fontWeight="800" textAlign="center">
+                        <Text color="#112b66" fontSize={18} fontFamily='Rubik-Bold' fontWeight="800" textAlign="center">
                             {phone ?? ''}
                         </Text>
                     </Text>
                 </YStack>
 
                 <OtpInput
+                    ref={otpInputRef}
                     numberOfDigits={6}
-                    onTextChange={setCode}
                     onFilled={handleVerifyCode}
+                    onTextChange={(value) => {
+                        setCode(value);
+                        if (verifyError) {
+                            setVerifyError(null);
+                        }
+                    }}
                     focusColor="#112b66"
                     theme={{
                         pinCodeContainerStyle: {
@@ -156,7 +167,7 @@ const PhoneLoginVerifyScreen = () => {
                         pinCodeTextStyle: {
                             color: '#112b66',
                             fontSize: 22,
-                            fontFamily: isCyrillic ? undefined : 'Rubik-Bold',
+                            fontFamily: 'Rubik-Bold',
                             fontWeight: '700',
                         },
                     }}
@@ -172,7 +183,7 @@ const PhoneLoginVerifyScreen = () => {
                     borderRadius={20}
                     height={52}
                 >
-                    <Button.Text color="#FFFFFF" fontFamily={isCyrillic ? undefined : 'Rubik-Bold'} fontWeight="700">
+                    <Button.Text color="#FFFFFF" fontFamily='Rubik-Bold' fontWeight="700">
                         {verifyCopy.verifyCodeButtonText}
                     </Button.Text>
                 </Button>
@@ -188,7 +199,7 @@ const PhoneLoginVerifyScreen = () => {
                     opacity={secondsLeft === 0 && !blocked ? 1 : 0.5}
                     disabled={secondsLeft > 0 || blocked}
                 >
-                    <Button.Text color="#112b66" fontFamily={isCyrillic ? undefined : 'Rubik-Bold'} fontWeight="700">
+                    <Button.Text color="#112b66" fontFamily='Rubik-Bold' fontWeight="700">
                         {secondsLeft === 0
                             ? verifyCopy.retryButtonText
                             : `${verifyCopy.retryIn || 'Retry in'} ${String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:${String(secondsLeft % 60).padStart(2, '0')}`}
@@ -199,6 +210,11 @@ const PhoneLoginVerifyScreen = () => {
                     <Text color="rgba(17,43,102,0.72)" fontSize={13} textAlign="center">
                         {`${verifyCopy.attempts || 'Attempts'}: ${Math.min(attempts, 3)} / 3`}
                     </Text>
+                    {verifyError ? (
+                        <Text color="#B42318" fontSize={13} textAlign="center" fontFamily='Rubik-Medium'>
+                            {verifyError}
+                        </Text>
+                    ) : null}
                 </YStack>
 
                 {loginMethod === 'email' && (
@@ -218,7 +234,7 @@ const PhoneLoginVerifyScreen = () => {
                                 <FontAwesomeIcon icon={faCircleInfo} color="#112b66" size={20} />
                             </YStack>
                             <YStack flex={1}>
-                                <Text fontSize={15} color="#112b66" fontFamily={isCyrillic ? undefined : 'Rubik-Bold'} fontWeight="700">
+                                <Text fontSize={15} color="#112b66" fontFamily='Rubik-Bold' fontWeight="700">
                                     {verifyCopy.unableToSendSms}
                                 </Text>
                                 <Text fontSize={15} color="#112b66">

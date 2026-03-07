@@ -18,7 +18,7 @@ import {
     faTimes,
 } from '@fortawesome/free-solid-svg-icons';
 import { Text, View, XStack, Image } from 'tamagui';
-import { navigatorConfig, get, config, toArray } from '../utils';
+import { navigatorConfig, get, config } from '../utils';
 import { configCase } from '../utils/format';
 import { format } from 'date-fns';
 import { PortalHost } from '@gorhom/portal';
@@ -38,13 +38,9 @@ import EditFuelReportScreen from '../screens/EditFuelReportScreen';
 import FuelReportScreen from '../screens/FuelReportScreen';
 import ChatHomeScreen from '../screens/ChatHomeScreen';
 import ChatChannelScreen from '../screens/ChatChannelScreen';
-import ChatParticipantsScreen from '../screens/ChatParticipantsScreen';
-import CreateChatChannelScreen from '../screens/CreateChatChannelScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
 import DriverAccountScreen from '../screens/DriverAccountScreen';
 import EditAccountPropertyScreen from '../screens/EditAccountPropertyScreen';
-import { useOrderManager } from '../contexts/OrderManagerContext';
-import { useChat } from '../contexts/ChatContext';
 import DriverLayout from '../layouts/DriverLayout';
 import useAppTheme from '../hooks/use-app-theme';
 import DriverOnlineToggle from '../components/DriverOnlineToggle';
@@ -87,7 +83,8 @@ function getTabConfig(name, key, defaultValue = null) {
 }
 
 function createTabScreens() {
-    const tabs = toArray(navigatorConfig('driverNavigator.tabs', 'DriverDashboardTab,DriverTaskTab,DriverReportTab,DriverChatTab,DriverAccountTab'));
+    // Keep the bottom bar aligned to the provided design: exactly 4 tabs.
+    const tabs = ['DriverDashboardTab', 'DriverTaskTab', 'DriverChatTab', 'DriverAccountTab'];
     const screens = {
         DriverDashboardTab: {
             screen: DriverDashboardTab,
@@ -97,17 +94,8 @@ function createTabScreens() {
         },
         DriverTaskTab: {
             screen: DriverTaskTab,
-            options: () => {
-                const { allActiveOrders } = useOrderManager();
-
-                return {
-                    tabBarLabel: config('DRIVER_ORDER_TAB_LABEL', 'Orders'),
-                    tabBarBadge: allActiveOrders.length,
-                    tabBarBadgeStyle: {
-                        marginRight: -5,
-                        opacity: allActiveOrders.length ? 1 : 0.5,
-                    },
-                };
+            options: {
+                tabBarLabel: config('DRIVER_ORDER_TAB_LABEL', 'Orders'),
             },
         },
         DriverReportTab: {
@@ -120,17 +108,8 @@ function createTabScreens() {
         },
         DriverChatTab: {
             screen: DriverChatTab,
-            options: () => {
-                const { unreadCount } = useChat();
-
-                return {
-                    tabBarLabel: config('DRIVER_CHAT_TAB_LABEL', 'Chat'),
-                    tabBarBadge: unreadCount,
-                    tabBarBadgeStyle: {
-                        marginRight: -5,
-                        opacity: unreadCount ? 1 : 0.5,
-                    },
-                };
+            options: {
+                tabBarLabel: config('DRIVER_CHAT_TAB_LABEL', 'Chat'),
             },
         },
         DriverAccountTab: {
@@ -456,24 +435,6 @@ const DriverChatTab = createNativeStackNavigator({
                 };
             },
         },
-        ChatParticipants: {
-            screen: ChatParticipantsScreen,
-            options: ({ route, navigation }) => {
-                return {
-                    headerShown: false,
-                    presentation: 'modal',
-                };
-            },
-        },
-        CreateChatChannel: {
-            screen: CreateChatChannelScreen,
-            options: ({ route, navigation }) => {
-                return {
-                    headerShown: false,
-                    presentation: 'modal',
-                };
-            },
-        },
     },
 });
 
@@ -490,14 +451,9 @@ const DriverAccountTab = createNativeStackNavigator({
         },
         DriverAccount: {
             screen: DriverAccountScreen,
-            options: ({ route, navigation }) => {
+            options: () => {
                 return {
-                    title: '',
-                    headerTransparent: true,
-                    headerShadowVisible: false,
-                    headerLeft: () => {
-                        return <BackButton onPress={() => navigation.goBack()} />;
-                    },
+                    headerShown: false,
                 };
             },
         },

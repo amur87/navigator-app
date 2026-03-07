@@ -16,6 +16,13 @@ export const SocketClusterProvider = ({ children }) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
+        if (!resolveConnectionConfig('SOCKETCLUSTER_ENABLED', true)) {
+            setSocket(null);
+            setIsConnected(false);
+            setError(null);
+            return;
+        }
+
         // Initialize the socket connection
         const options = {
             hostname: resolveConnectionConfig('SOCKETCLUSTER_HOST'),

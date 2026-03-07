@@ -8,7 +8,9 @@ const DEFAULT_FLEETBASE_HOST = 'https://api-delivery.max.kg';
 const DEFAULT_FLEETBASE_KEY = 'flb_live_eH6tlC0R3Twu2ogNMV1o';
 
 const normalizeConfigValue = (value: any) => {
-    if (typeof value !== 'string') return value;
+    if (typeof value !== 'string') {
+        return value;
+    }
 
     const trimmed = value.trim();
     if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
@@ -18,15 +20,28 @@ const normalizeConfigValue = (value: any) => {
     return trimmed;
 };
 
+const withNonEmptyFallback = (value: any, fallback: string) => {
+    const normalized = normalizeConfigValue(value);
+    if (typeof normalized !== 'string') {
+        return fallback;
+    }
+
+    return normalized.trim().length > 0 ? normalized : fallback;
+};
+
 export const ConfigProvider = ({ children }: { children: ReactNode }) => {
     const resolveConnectionConfig = useCallback(
         (key, defaultValue = null) => {
             const fullConfig = {
-                FLEETBASE_HOST: normalizeConfigValue(config('FLEETBASE_HOST', DEFAULT_FLEETBASE_HOST)),
-                FLEETBASE_KEY: normalizeConfigValue(config('FLEETBASE_KEY', DEFAULT_FLEETBASE_KEY)),
+                FLEETBASE_HOST: withNonEmptyFallback(config('FLEETBASE_HOST', DEFAULT_FLEETBASE_HOST), DEFAULT_FLEETBASE_HOST),
+                FLEETBASE_KEY: withNonEmptyFallback(
+                    config('FLEETBASE_KEY', config('FLEETBASE_PUBLIC_KEY', DEFAULT_FLEETBASE_KEY)),
+                    DEFAULT_FLEETBASE_KEY
+                ),
                 SOCKETCLUSTER_HOST: config('SOCKETCLUSTER_HOST', 'socket.fleetbase.io'),
-                SOCKETCLUSTER_PORT: parseInt(config('SOCKETCLUSTER_PORT', '8000')),
+                SOCKETCLUSTER_PORT: parseInt(config('SOCKETCLUSTER_PORT', '8000'), 10),
                 SOCKETCLUSTER_SECURE: toBoolean(config('SOCKETCLUSTER_SECURE', true)),
+                SOCKETCLUSTER_ENABLED: toBoolean(config('SOCKETCLUSTER_ENABLED', true)),
                 SOCKETCLUSTER_PATH: config('SOCKETCLUSTER_PATH', '/socketcluster/'),
             };
 

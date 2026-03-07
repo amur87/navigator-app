@@ -1,4 +1,4 @@
-import { useNavigation } from '@react-navigation/native';
+﻿import { useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState } from 'react';
 import { Alert, Image, SafeAreaView } from 'react-native';
 import { Button, Text, YStack } from 'tamagui';
@@ -11,7 +11,6 @@ import AuthBackButton from '../components/AuthBackButton';
 const CreateAccountVerifyScreen = ({ route }) => {
     const navigation = useNavigation<any>();
     const { language, t } = useLanguage();
-    const isCyrillic = language.code === 'ru' || language.code === 'ky';
     const localeCode = language.code === 'ru' || language.code === 'ky' ? language.code : 'en';
     const verifyCopy = {
         en: {
@@ -49,11 +48,12 @@ const CreateAccountVerifyScreen = ({ route }) => {
         },
     }[localeCode];
 
-    const { phone: contextPhone, verifyAccountCreation, requestCreationCode, isVerifyingCode, isAuthenticated } = useAuth();
+    const { phone: contextPhone, verifyAccountCreation, requestCreationCode, isVerifyingCode } = useAuth();
     const [code, setCode] = useState<string | null>(null);
     const [secondsLeft, setSecondsLeft] = useState(60);
     const [attempts, setAttempts] = useState(0);
     const [blocked, setBlocked] = useState(false);
+    const [verifyError, setVerifyError] = useState<string | null>(null);
     const name = route?.params?.name;
     const phone = route?.params?.phone ?? contextPhone;
 
@@ -69,14 +69,6 @@ const CreateAccountVerifyScreen = ({ route }) => {
         return () => clearInterval(id);
     }, [secondsLeft, blocked]);
 
-    useEffect(() => {
-        if (!isAuthenticated) {
-            return;
-        }
-
-        navigation.reset({ index: 0, routes: [{ name: 'DriverNavigator' }] });
-    }, [isAuthenticated, navigation]);
-
     const handleVerifyCode = async (inputCode: string | null) => {
         if (isVerifyingCode || blocked) {
             return;
@@ -84,17 +76,22 @@ const CreateAccountVerifyScreen = ({ route }) => {
 
         const normalizedCode = `${inputCode ?? ''}`.replace(/\D/g, '');
         if (normalizedCode.length !== 6) {
+            setVerifyError(verifyCopy.invalidCode);
             toast.error(verifyCopy.invalidCode);
             return;
         }
 
         if (!phone) {
-            toast.error(t('Auth.CreateAccountScreen.missingPhoneError'));
+            const message = t('Auth.CreateAccountScreen.missingPhoneError');
+            setVerifyError(message);
+            toast.error(message);
             return;
         }
 
         try {
+            setVerifyError(null);
             await verifyAccountCreation(phone, normalizedCode, { name, phone });
+            navigation.reset({ index: 0, routes: [{ name: 'DriverNavigator' }] });
         } catch (error) {
             const nextAttempts = attempts + 1;
             setAttempts(nextAttempts);
@@ -107,6 +104,7 @@ const CreateAccountVerifyScreen = ({ route }) => {
             }
 
             const message = error instanceof Error ? error.message : verifyCopy.invalidCode;
+            setVerifyError(message);
             toast.error(message);
         }
     };
@@ -123,8 +121,10 @@ const CreateAccountVerifyScreen = ({ route }) => {
             await requestCreationCode(phone);
             setSecondsLeft(60);
             setCode('');
+            setVerifyError(null);
         } catch (error) {
             const message = error instanceof Error ? error.message : verifyCopy.unableToSendSms;
+            setVerifyError(message);
             toast.error(message);
         }
     };
@@ -135,9 +135,9 @@ const CreateAccountVerifyScreen = ({ route }) => {
             <YStack flex={1} justifyContent='center' alignItems='center' space='$4' padding='$5'>
                 <YStack mb='$3' alignItems='center'>
                     <Image source={require('../../assets/logo_primary.png')} style={{ width: 180, height: 72, resizeMode: 'contain' }} />
-                    <Text color='#112b66' fontSize={18} fontFamily={isCyrillic ? undefined : 'Rubik-Bold'} fontWeight='700' textAlign='center' mt='$3'>
+                    <Text color='#112b66' fontSize={18} fontFamily='Rubik-Bold' fontWeight='700' textAlign='center' mt='$3'>
                         {verifyCopy.awaitingVerificationTitle}{' '}
-                        <Text color='#112b66' fontSize={18} fontFamily={isCyrillic ? undefined : 'Rubik-Bold'} fontWeight='800' textAlign='center'>
+                        <Text color='#112b66' fontSize={18} fontFamily='Rubik-Bold' fontWeight='800' textAlign='center'>
                             {phone ?? ''}
                         </Text>
                     </Text>
@@ -145,8 +145,13 @@ const CreateAccountVerifyScreen = ({ route }) => {
 
                 <OtpInput
                     numberOfDigits={6}
-                    onTextChange={setCode}
                     onFilled={handleVerifyCode}
+                    onTextChange={(value) => {
+                        setCode(value);
+                        if (verifyError) {
+                            setVerifyError(null);
+                        }
+                    }}
                     focusColor='#112b66'
                     theme={{
                         pinCodeContainerStyle: {
@@ -160,7 +165,7 @@ const CreateAccountVerifyScreen = ({ route }) => {
                         pinCodeTextStyle: {
                             color: '#112b66',
                             fontSize: 22,
-                            fontFamily: isCyrillic ? undefined : 'Rubik-Bold',
+                            fontFamily: 'Rubik-Bold',
                             fontWeight: '700',
                         },
                     }}
@@ -176,7 +181,7 @@ const CreateAccountVerifyScreen = ({ route }) => {
                     borderRadius={20}
                     height={52}
                 >
-                    <Button.Text color='#FFFFFF' fontFamily={isCyrillic ? undefined : 'Rubik-Bold'} fontWeight='700'>
+                    <Button.Text color='#FFFFFF' fontFamily='Rubik-Bold' fontWeight='700'>
                         {verifyCopy.verifyCodeButtonText}
                     </Button.Text>
                 </Button>
@@ -192,7 +197,7 @@ const CreateAccountVerifyScreen = ({ route }) => {
                     opacity={secondsLeft === 0 && !blocked ? 1 : 0.5}
                     disabled={secondsLeft > 0 || blocked}
                 >
-                    <Button.Text color='#112b66' fontFamily={isCyrillic ? undefined : 'Rubik-Bold'} fontWeight='700'>
+                    <Button.Text color='#112b66' fontFamily='Rubik-Bold' fontWeight='700'>
                         {secondsLeft === 0
                             ? verifyCopy.retryButtonText
                             : `${verifyCopy.retryIn} ${String(Math.floor(secondsLeft / 60)).padStart(2, '0')}:${String(secondsLeft % 60).padStart(2, '0')}`}
@@ -203,6 +208,11 @@ const CreateAccountVerifyScreen = ({ route }) => {
                     <Text color='rgba(17,43,102,0.72)' fontSize={13} textAlign='center'>
                         {`${verifyCopy.attempts}: ${Math.min(attempts, 3)} / 3`}
                     </Text>
+                    {verifyError ? (
+                        <Text color='#B42318' fontSize={13} textAlign='center' fontFamily='Rubik-Medium'>
+                            {verifyError}
+                        </Text>
+                    ) : null}
                 </YStack>
             </YStack>
         </SafeAreaView>

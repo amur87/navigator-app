@@ -7,8 +7,19 @@ import useStorage, { storage } from '../hooks/use-storage';
 import useFleetbase from '../hooks/use-fleetbase';
 import { useLanguage } from './LanguageContext';
 import { useNotification } from './NotificationContext';
+import Env from '../utils/env-config';
 
 const AuthContext = createContext();
+const VERIFY_TIMEOUT_MS = 15000;
+const DEV_BYPASS_AUTH = `${Env.DEV_BYPASS_AUTH ?? ''}`.toLowerCase() === 'true';
+
+const createDevDriverPayload = () => ({
+    id: `${Env.DEV_BYPASS_DRIVER_ID || 'debug-driver'}`,
+    name: `${Env.DEV_BYPASS_DRIVER_NAME || 'Debug Driver'}`,
+    phone: `${Env.DEV_BYPASS_DRIVER_PHONE || '+996550882588'}`,
+    token: `${Env.DEV_BYPASS_DRIVER_TOKEN || 'debug-driver-token'}`,
+    online: false,
+});
 
 const logoutFacebookIfAvailable = () => {
     try {
@@ -30,6 +41,25 @@ const getErrorText = (error) => {
     }
 
     return messageParts.filter((part) => typeof part === 'string' && part.trim().length > 0).join(' ');
+};
+
+const withTimeout = async (promise, timeoutMs, timeoutMessage) => {
+    let timer;
+
+    try {
+        return await Promise.race([
+            promise,
+            new Promise((_, reject) => {
+                timer = setTimeout(() => {
+                    reject(new Error(timeoutMessage));
+                }, timeoutMs);
+            }),
+        ]);
+    } finally {
+        if (timer) {
+            clearTimeout(timer);
+        }
+    }
 };
 
 const isRouteMissingError = (error) => {
@@ -95,6 +125,9 @@ export const AuthProvider = ({ children }) => {
     const organizationsLoadedRef = useRef(false);
     const loadOrganizationsPromiseRef = useRef();
     const didInitAuthRef = useRef(false);
+    // Stable ref for the driver instance so trackDriver doesn't need
+    // state.driver in its deps (which would cascade re-renders on every GPS ping).
+    const stateDriverRef = useRef(state.driver);
 
     const getFleetbaseOrThrow = useCallback(() => {
         if (!fleetbase) {
@@ -103,6 +136,8 @@ export const AuthProvider = ({ children }) => {
 
         return fleetbase;
     }, [fleetbase]);
+
+    useEffect(() => { stateDriverRef.current = state.driver; }, [state.driver]);
 
     // Restore persisted session once the SDK adapter is ready.
     // (Previously this was clearing storage on every cold start, which made auth "fall off".)
@@ -119,8 +154,15 @@ export const AuthProvider = ({ children }) => {
 
         if (storedDriver) {
             setDriver(storedDriver);
+            return;
         }
-    }, [adapter, setDriver, storedDriver]);
+
+        if (__DEV__ && DEV_BYPASS_AUTH) {
+            createDriverSession(createDevDriverPayload()).catch((error) => {
+                console.warn('[AuthContext] DEV_BYPASS_AUTH failed:', error);
+            });
+        }
+    }, [adapter, createDriverSession, setDriver, storedDriver]);
 
     const setDriver = useCallback(
         (newDriver) => {
@@ -171,17 +213,18 @@ export const AuthProvider = ({ children }) => {
         [setDriver, state.driver]
     );
 
-    // Track driver position and other position related data
+    // Track driver position — uses a stable ref so this callback never
+    // changes identity and doesn't trigger cascading re-renders on every
+    // GPS ping.  We intentionally do NOT call setDriver here because the
+    // API response for a tracking ping doesn't contain meaningful state
+    // changes, and updating driver state every 15 s would cascade through
+    // the entire component tree.
     const trackDriver = useCallback(
         async (data = {}) => {
-            try {
-                const driver = await state.driver.track(data);
-                setDriver(driver);
-            } catch (err) {
-                throw err;
-            }
+            if (!stateDriverRef.current) return;
+            await stateDriverRef.current.track(data);
         },
-        [setDriver, state.driver]
+        []
     );
 
     // Update driver meta attributes
@@ -266,12 +309,13 @@ export const AuthProvider = ({ children }) => {
     const createDriverSession = useCallback(
         async (driver, callback = null) => {
             clearSessionData();
+            const instance = driver instanceof Driver ? driver : new Driver(driver, adapter);
+
             // setDriverDefaultLocation(driver);
-            setDriver(driver);
-            setAuthToken(driver.token);
+            setDriver(instance);
+            setAuthToken(instance.token);
 
             // run a callback with the driver instance
-            const instance = new Driver(driver, adapter);
             if (typeof callback === 'function') {
                 callback(instance);
             }
@@ -360,7 +404,11 @@ export const AuthProvider = ({ children }) => {
                 let response = null;
 
                 if (typeof sdk?.drivers?.create === 'function' && sdk.drivers.create.length <= 2) {
-                    response = await sdk.drivers.create(payload);
+                    response = await withTimeout(
+                        sdk.drivers.create(payload),
+                        VERIFY_TIMEOUT_MS,
+                        'Verification timed out. Please try again.'
+                    );
                 } else if (adapter) {
                     const attempts = [
                         { path: 'drivers', payload },
@@ -371,7 +419,11 @@ export const AuthProvider = ({ children }) => {
                     let lastError = null;
                     for (const attempt of attempts) {
                         try {
-                            response = await adapter.post(attempt.path, attempt.payload);
+                            response = await withTimeout(
+                                adapter.post(attempt.path, attempt.payload),
+                                VERIFY_TIMEOUT_MS,
+                                'Verification timed out. Please try again.'
+                            );
                             lastError = null;
                             break;
                         } catch (error) {
@@ -401,8 +453,8 @@ export const AuthProvider = ({ children }) => {
                     throw new Error('Unable to create driver session from API response.');
                 }
 
-                createDriverSession(driver);
-                dispatch({ type: 'VERIFY', driver });
+                const driverSession = await createDriverSession(driver);
+                dispatch({ type: 'VERIFY', driver: driverSession });
             } catch (error) {
                 console.warn('[AuthContext] Account creation verification failed:', error);
                 throw error;
@@ -447,9 +499,13 @@ export const AuthProvider = ({ children }) => {
             dispatch({ type: 'VERIFY', isVerifyingCode: true });
             try {
                 const sdk = getFleetbaseOrThrow();
-                const driver = await sdk.drivers.verifyCode(normalizedPhone, normalizedCode);
-                createDriverSession(driver);
-                dispatch({ type: 'VERIFY', driver, isVerifyingCode: false });
+                const driver = await withTimeout(
+                    sdk.drivers.verifyCode(normalizedPhone, normalizedCode),
+                    VERIFY_TIMEOUT_MS,
+                    'Verification timed out. Please try again.'
+                );
+                const driverSession = await createDriverSession(driver);
+                dispatch({ type: 'VERIFY', driver: driverSession, isVerifyingCode: false });
             } catch (error) {
                 console.warn('[AuthContext] Code verification failed:', error);
                 dispatch({ type: 'VERIFY', isVerifyingCode: false });

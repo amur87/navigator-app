@@ -1,62 +1,88 @@
-import { useImperativeHandle, useRef, forwardRef } from 'react';
-import { FlatList } from 'react-native';
-import { YStack, Text } from 'tamagui';
-import { useAuth } from '../contexts/AuthContext';
+﻿import React, { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { format, isToday, isYesterday } from 'date-fns';
 import ChatMessage from './ChatMessage';
-import ChatLog from './ChatLog';
-import ChatAttachment from './ChatAttachment';
 
-const ChatFeed = forwardRef(({ channel }, ref) => {
-    const { driver } = useAuth();
-    const participant = channel.participants.find((participant) => participant.user === driver.getAttribute('user'));
-    const flatListRef = useRef(null);
+const getDateLabel = (value: string) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+        return '';
+    }
+    if (isToday(date)) {
+        return 'Сегодня';
+    }
+    if (isYesterday(date)) {
+        return 'Вчера';
+    }
+    return format(date, 'd MMMM');
+};
+
+const flattenFeed = (feed = []) => {
+    const result = [];
+    let currentDateLabel = null;
+
+    feed.forEach((message) => {
+        const label = getDateLabel(message.createdAt);
+        if (label && label !== currentDateLabel) {
+            currentDateLabel = label;
+            result.push({ id: `date-${label}-${message.id}`, type: 'date', label });
+        }
+        result.push({ id: message.id, type: 'message', message });
+    });
+
+    return result;
+};
+
+const ChatFeed = forwardRef(({ channel, currentUserId }, ref) => {
+    const listRef = useRef(null);
+    const data = useMemo(() => flattenFeed(channel?.feed ?? []), [channel?.feed]);
 
     useImperativeHandle(ref, () => ({
-        scrollToEnd: (options = { animated: true }) => {
-            flatListRef.current?.scrollToEnd(options);
-        },
-        scrollToIndex: (options) => {
-            flatListRef.current?.scrollToIndex(options);
-        },
-        getRef: () => flatListRef.current,
+        scrollToEnd: () => listRef.current?.scrollToEnd({ animated: true }),
     }));
-
-    const renderItem = ({ item }) => {
-        return (
-            <YStack mb='$2' px='$3' py='$2'>
-                {(() => {
-                    switch (item.type) {
-                        case 'message':
-                            return <ChatMessage record={item.data} participant={participant} />;
-                        case 'log':
-                            return <ChatLog record={item.data} participant={participant} />;
-                        case 'attachment':
-                            return <ChatAttachment record={item.data} participant={participant} />;
-                        default:
-                            return null;
-                    }
-                })()}
-            </YStack>
-        );
-    };
-
-    const scrollToBottom = () => {
-        requestAnimationFrame(() => {
-            flatListRef.current?.scrollToEnd({ animated: false });
-        });
-    };
 
     return (
         <FlatList
-            ref={flatListRef}
-            data={channel.feed}
-            keyExtractor={(item, index) => item.data?.id ?? index}
-            renderItem={renderItem}
+            ref={listRef}
+            data={data}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => {
+                if (item.type === 'date') {
+                    return (
+                        <View style={styles.dateWrap}>
+                            <Text style={styles.dateText}>{item.label}</Text>
+                        </View>
+                    );
+                }
+
+                return <ChatMessage record={item.message} currentUserId={currentUserId} />;
+            }}
+            contentContainerStyle={styles.content}
+            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
             showsVerticalScrollIndicator={false}
-            showsHorizontalScrollIndicator={false}
-            onContentSizeChange={scrollToBottom}
         />
     );
 });
 
+const styles = StyleSheet.create({
+    content: {
+        paddingTop: 8,
+        paddingBottom: 12,
+    },
+    dateWrap: {
+        alignItems: 'center',
+        marginVertical: 8,
+    },
+    dateText: {
+        fontSize: 11,
+        color: '#8e8e93',
+        fontFamily: 'Rubik-Regular',
+        backgroundColor: 'rgba(255,255,255,0.78)',
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 999,
+    },
+});
+
 export default ChatFeed;
+

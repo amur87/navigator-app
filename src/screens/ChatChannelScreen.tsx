@@ -1,194 +1,261 @@
-import { useRef, useEffect, useCallback, useState } from 'react';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { FlatList, RefreshControl, Pressable, Keyboard } from 'react-native';
-import { Text, YStack, XStack, Button, Avatar, Separator, useTheme } from 'tamagui';
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import { faPlus, faChevronLeft } from '@fortawesome/free-solid-svg-icons';
-import { last, abbreviateName, later } from '../utils';
-import { formatWhatsAppTimestamp } from '../utils/format';
-import { useChat } from '../contexts/ChatContext';
+import { faChevronLeft, faEllipsisVertical, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '../contexts/AuthContext';
-import useSocketClusterClient from '../hooks/use-socket-cluster-client';
+import { useChat } from '../contexts/ChatContext';
 import ChatFeed from '../components/ChatFeed';
 import ChatKeyboard from '../components/ChatKeyboard';
-import ChatParticipants from '../components/ChatParticipants';
+import ChatParticipantAvatar from '../components/ChatParticipantAvatar';
+import { getMaterialRipple } from '../utils/material-ripple';
+import matrixConfig from '../config/matrix';
 
-const ChatChannelScreen = ({ route }) => {
-    const theme = useTheme();
-    const navigation = useNavigation();
-    const { currentChannel: channel, setCurrentChannel: setChannel, sendMessage, reloadCurrentChannel, getChannelCurrentParticipant } = useChat();
-    const { listen } = useSocketClusterClient();
-    const chatFeedRef = useRef();
-    const listenerRef = useRef();
-    const channelReloadedRef = useRef(false);
+const ChatChannelScreen = () => {
+    const navigation = useNavigation<any>();
+    const route = useRoute<any>();
+    const { driver } = useAuth();
+    const {
+        currentChannel,
+        channels,
+        getChannel,
+        setCurrentChannel,
+        sendTextMessage,
+        sendImageAttachment,
+        sendGenericFileAttachment,
+        sendVoiceAttachment,
+        sendLocationMessage,
+        sendSticker,
+        markChannelRead,
+        callChannel,
+        capabilities,
+    } = useChat();
+    const currentUserId = driver?.getAttribute?.('user') ?? driver?.user ?? driver?.id;
+    const [isSending, setIsSending] = useState(false);
+    const chatFeedRef = useRef<any>(null);
+    const loadRoomRef = useRef<(() => Promise<void>) | null>(null);
+    const fallbackRoomId =
+        matrixConfig.supportRoomId ||
+        channels.find((item: any) => !item?.raw?.seeded && !item?.raw?.fromSpace && !item?.raw?.invited)?.id ||
+        channels[0]?.id;
+    const roomId = route.params?.channelId ?? route.params?.channel?.id ?? currentChannel?.id ?? fallbackRoomId;
 
-    const addFeedItem = useCallback((item, type = 'message') => {
-        setChannel((prevChannel) => {
-            const existsInFeed = prevChannel.feed.some((feedItem) => feedItem.data.id === item.id);
-            if (existsInFeed) return prevChannel;
-
-            return {
-                ...prevChannel,
-                feed: [
-                    ...prevChannel.feed.filter((feedItem) => feedItem.data.id !== 'temp'),
-                    {
-                        type,
-                        data: item,
-                        created_at: new Date(),
-                    },
-                ],
-            };
-        });
-        scrollToBottom(0);
-    }, []);
-
-    const addFeedTempItem = useCallback((item, type = 'message') => {
-        setChannel((prevChannel) => {
-            const existsInFeed = prevChannel.feed.some((feedItem) => feedItem.data.id === item.id);
-            if (existsInFeed) return prevChannel;
-
-            return {
-                ...prevChannel,
-                feed: [
-                    ...prevChannel.feed,
-                    {
-                        type,
-                        data: item,
-                        created_at: new Date(),
-                    },
-                ],
-            };
-        });
-        scrollToBottom(0);
-    }, []);
-
-    const handleExitChatChannel = () => {
-        navigation.goBack();
-    };
-
-    const scrollToBottom = (delay = 100) => {
-        later(() => {
-            if (chatFeedRef.current) {
-                chatFeedRef.current.scrollToEnd();
-            }
-        }, delay);
-    };
-
-    const handleSendMessage = async (message) => {
-        addFeedTempItem({
-            id: 'temp',
-            sender: getChannelCurrentParticipant(channel),
-            content: message,
-            receipts: [],
-            attachments: [],
-            created_at: new Date(),
-            updated_at: new Date(),
-        });
-
-        try {
-            const newMessage = await sendMessage(channel, message);
-            addFeedItem(newMessage);
-            await reloadChannel();
-        } catch (error) {
-            console.warn('Error sending message:', error);
+    const room = useMemo(() => {
+        if (currentChannel?.id === roomId) {
+            return currentChannel;
         }
-    };
+        return null;
+    }, [currentChannel, roomId]);
 
-    const reloadChannel = async () => {
-        try {
-            const reloadedChannel = await reloadCurrentChannel();
-            scrollToBottom(0);
-        } catch (error) {
-            console.warn('Error reloading channel:', error);
+    const composerDisabledReason = room?.raw?.serverMisconfigurationMessage
+        ? room.raw.serverMisconfigurationMessage
+        : room?.raw?.requiresInvite
+        ? 'Отправка недоступна, пока сервер Matrix не добавит вас в комнату.'
+        : room?.raw?.e2eeError
+          ? room.raw.e2eeError
+          : '';
+    const e2eeStatusText = room?.raw?.e2eeStatusText || '';
+
+    const loadRoom = useCallback(async () => {
+        if (!roomId) {
+            return;
         }
-    };
+
+        const loadedRoom = await getChannel(roomId);
+        if (loadedRoom) {
+            setCurrentChannel(loadedRoom);
+            await markChannelRead(loadedRoom);
+        }
+    }, [getChannel, markChannelRead, roomId, setCurrentChannel]);
 
     useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
-            // Adjust the delay as needed
-            later(() => {
-                if (chatFeedRef.current) {
-                    chatFeedRef.current.scrollToEnd();
-                }
-            }, 150);
-        });
+        loadRoomRef.current = loadRoom;
+    }, [loadRoom]);
 
-        return () => {
-            keyboardDidShowListener.remove();
-        };
-    }, []);
+    useEffect(() => {
+        loadRoomRef.current?.().catch((error) => console.warn('Unable to load room:', error));
+    }, [roomId]);
 
-    useFocusEffect(
-        useCallback(() => {
-            const listenForEvents = async () => {
-                // Stop previous listener if it exists
-                if (listenerRef.current) {
-                    listenerRef.current.stop();
-                    listenerRef.current = null;
-                }
+    useEffect(() => {
+        if (room?.feed?.length) {
+            chatFeedRef.current?.scrollToEnd();
+        }
+    }, [room?.feed?.length]);
 
-                const listener = await listen(`chat.${channel.id}`, (socketEvent) => {
-                    console.log('[ChatChannelScreen #socketEvent]', socketEvent);
-                    switch (socketEvent.event) {
-                        case 'chat_message.created':
-                        case 'chat.added_participant':
-                        case 'chat_channel.created':
-                        case 'chat_receipt.created':
-                        case 'chat_participant.deleted':
-                        case 'chat.removed_participant':
-                        case 'chat_channel.deleted':
-                            reloadChannel();
-                            break;
-                    }
-                });
+    const executeAction = async (action: () => Promise<any>) => {
+        if (isSending) {
+            return;
+        }
 
-                if (listener) {
-                    listenerRef.current = listener;
-                }
-            };
-
-            // Reload channel on focus
-            if (channelReloadedRef && channelReloadedRef.current === false) {
-                reloadChannel();
-                channelReloadedRef.current = true;
-            }
-
-            listenForEvents();
-
-            return () => {
-                if (listenerRef.current) {
-                    listenerRef.current.stop();
-                    listenerRef.current = null;
-                }
-            };
-        }, [channel.id])
-    );
+        setIsSending(true);
+        try {
+            await action();
+        } catch (error: any) {
+            console.warn('ChatChannel action failed:', error?.stack ?? error);
+            Alert.alert('Чат', error?.message ?? 'Не удалось выполнить действие в чате.');
+        } finally {
+            setIsSending(false);
+        }
+    };
 
     return (
-        <YStack flex={1} bg='$surface'>
-            <XStack bg='$background' alignItems='center' justifyContent='space-between' borderBottomWidth={1} borderColor='$borderColor' px='$3' py='$4' width='100%'>
-                <XStack flex={1} alignItems='center'>
-                    <YStack mr='$3'>
-                        <Button onPress={handleExitChatChannel} bg='$primary' borderWidth={1} borderColor='$primaryBorder' size='$3' circular>
-                            <Button.Icon>
-                                <FontAwesomeIcon icon={faChevronLeft} color={theme.primaryText.val} size={16} />
-                            </Button.Icon>
-                        </Button>
-                    </YStack>
-                    <YStack flex={1}>
-                        <Text fontSize={16} color='$textPrimary' fontWeight='bold' numberOfLines={1}>
-                            {channel.title}
-                        </Text>
-                    </YStack>
-                </XStack>
-                <YStack pr='$2'>
-                    <ChatParticipants participants={channel.participants} onPress={() => navigation.navigate('ChatParticipants', { channel })} />
-                </YStack>
-            </XStack>
-            <ChatFeed ref={chatFeedRef} channel={channel} />
-            <ChatKeyboard channel={channel} onSend={handleSendMessage} />
-        </YStack>
+        <SafeAreaView style={styles.safeArea} edges={['top']}>
+            <View style={styles.header}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.headerAction} android_ripple={getMaterialRipple({ color: 'rgba(153,26,78,0.10)' })}>
+                    <FontAwesomeIcon icon={faChevronLeft} size={17} color='#991A4E' />
+                </Pressable>
+                <View style={styles.headerBody}>
+                    <ChatParticipantAvatar
+                        participant={{
+                            avatarUrl: room?.avatarUrl,
+                            avatarFallback: room?.avatarFallback,
+                            isOnline: room?.statusText === 'В сети',
+                            name: room?.title,
+                        }}
+                        size={38}
+                    />
+                    <View style={styles.headerTextWrap}>
+                        <Text style={styles.headerTitle} numberOfLines={1}>{room?.title ?? 'Чат'}</Text>
+                        <Text style={styles.headerStatus}>{room?.statusText ?? (capabilities.matrixActive ? 'Matrix' : 'Офлайн')}</Text>
+                    </View>
+                </View>
+                <Pressable onPress={() => executeAction(() => callChannel(room))} style={styles.headerAction} android_ripple={getMaterialRipple({ color: 'rgba(17,43,102,0.10)' })}>
+                    <FontAwesomeIcon icon={faPhone} size={15} color='#112b66' />
+                </Pressable>
+                <Pressable
+                    onPress={() =>
+                        Alert.alert(
+                            'Чат',
+                            capabilities.matrixActive
+                                ? 'Комната Matrix подключена. Дополнительные действия зависят от политик комнаты и прав аккаунта.'
+                                : 'Комната Matrix пока недоступна.'
+                        )
+                    }
+                    style={styles.headerAction}
+                    android_ripple={getMaterialRipple({ color: 'rgba(17,43,102,0.10)' })}
+                >
+                    <FontAwesomeIcon icon={faEllipsisVertical} size={15} color='#112b66' />
+                </Pressable>
+            </View>
+
+            <View style={styles.feedWrap}>
+                {room ? (
+                    <>
+                        {composerDisabledReason ? (
+                            <View style={styles.warningBanner}>
+                                <Text style={styles.warningText}>{composerDisabledReason}</Text>
+                            </View>
+                        ) : null}
+                        {!composerDisabledReason && e2eeStatusText ? (
+                            <View style={styles.warningBanner}>
+                                <Text style={styles.warningText}>{e2eeStatusText}</Text>
+                            </View>
+                        ) : null}
+                        <ChatFeed ref={chatFeedRef} channel={room} currentUserId={currentUserId} />
+                    </>
+                ) : (
+                    <View style={styles.emptyState}>
+                        <Text style={styles.emptyTitle}>Загружаем чат...</Text>
+                    </View>
+                )}
+            </View>
+
+            {room ? (
+                <ChatKeyboard
+                    channel={room}
+                    capabilities={capabilities}
+                    onSend={(text) => executeAction(() => sendTextMessage(room, text))}
+                    onSendPhoto={(asset) => executeAction(() => sendImageAttachment(room, asset))}
+                    onSendFile={(file) => executeAction(() => sendGenericFileAttachment(room, file))}
+                    onSendVoice={(asset) => executeAction(() => sendVoiceAttachment(room, asset))}
+                    onSendLocation={(coords) => executeAction(() => sendLocationMessage(room, coords))}
+                    onSendSticker={(sticker) => executeAction(() => sendSticker(room, sticker))}
+                    onStartCall={() => executeAction(() => callChannel(room))}
+                    disabled={Boolean(composerDisabledReason)}
+                    disabledReason={composerDisabledReason}
+                />
+            ) : null}
+        </SafeAreaView>
     );
 };
+
+const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#eef1f6',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingHorizontal: 12,
+        paddingTop: 8,
+        paddingBottom: 10,
+        backgroundColor: 'rgba(255,255,255,0.94)',
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(0,0,0,0.08)',
+    },
+    headerAction: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#ffffff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+    },
+    headerBody: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        minWidth: 0,
+    },
+    headerTextWrap: {
+        flex: 1,
+        minWidth: 0,
+    },
+    headerTitle: {
+        color: '#111111',
+        fontSize: 16,
+        fontFamily: 'Rubik-Bold',
+    },
+    headerStatus: {
+        marginTop: 2,
+        color: '#34C759',
+        fontSize: 11,
+        fontFamily: 'Rubik-Regular',
+    },
+    feedWrap: {
+        flex: 1,
+        backgroundColor: '#eef1f6',
+    },
+    warningBanner: {
+        marginHorizontal: 12,
+        marginTop: 10,
+        marginBottom: 2,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 14,
+        backgroundColor: 'rgba(255,204,0,0.18)',
+    },
+    warningText: {
+        color: '#5c4c00',
+        fontSize: 12,
+        lineHeight: 17,
+        fontFamily: 'Rubik-Regular',
+    },
+    emptyState: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyTitle: {
+        color: '#6e6e73',
+        fontSize: 14,
+        fontFamily: 'Rubik-Regular',
+    },
+});
 
 export default ChatChannelScreen;

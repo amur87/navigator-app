@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { TamaguiProvider, Theme } from 'tamagui';
 import { Toasts } from '@backpackapp-io/react-native-toast';
@@ -18,26 +18,33 @@ import { LocationProvider } from './src/contexts/LocationContext';
 import { ConfigProvider } from './src/contexts/ConfigContext';
 import config from './tamagui.config';
 import BootSplash from 'react-native-bootsplash';
-import { Animated, Easing, StyleSheet, View } from 'react-native';
+import { Text as RNText, TextInput as RNTextInput } from 'react-native';
+
+console.log('[bootstrap] App.tsx module evaluated');
+
+RNText.defaultProps = RNText.defaultProps || {};
+RNText.defaultProps.style = [RNText.defaultProps.style, { fontFamily: 'Rubik-Regular' }];
+
+RNTextInput.defaultProps = RNTextInput.defaultProps || {};
+RNTextInput.defaultProps.style = [RNTextInput.defaultProps.style, { fontFamily: 'Rubik-Regular' }];
 
 function AppContent(): React.JSX.Element {
     const { appTheme } = useThemeContext();
-    const [showSplash, setShowSplash] = useState(true);
-    const scale = useRef(new Animated.Value(0.8)).current;
-    const opacity = useRef(new Animated.Value(1)).current;
+
+    console.log('[bootstrap] AppContent render start', { appTheme });
 
     useEffect(() => {
-        Animated.sequence([
-            Animated.timing(scale, { toValue: 1.1, duration: 500, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-            Animated.timing(scale, { toValue: 1, duration: 300, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-            Animated.timing(opacity, { toValue: 0, duration: 350, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        ]).start(async () => {
-            setShowSplash(false);
+        console.log('[bootstrap] AppContent mounted');
+        const timer = setTimeout(async () => {
             try {
+                console.log('[bootstrap] BootSplash.hide requested');
                 await BootSplash.hide({ fade: true });
+                console.log('[bootstrap] BootSplash.hide resolved');
             } catch {}
-        });
-    }, [scale, opacity]);
+        }, 250);
+
+        return () => clearTimeout(timer);
+    }, []);
 
     return (
         <TamaguiProvider config={config} theme={appTheme}>
@@ -70,22 +77,6 @@ function AppContent(): React.JSX.Element {
                             </ConfigProvider>
                         </BottomSheetModalProvider>
                     </SafeAreaProvider>
-                    {showSplash && (
-                        <View style={StyleSheet.absoluteFill} pointerEvents='none'>
-                            <View style={styles.splashBackground} />
-                            <Animated.Image
-                                source={require('./assets/logo_splash.png')}
-                                style={[
-                                    styles.splashLogo,
-                                    {
-                                        transform: [{ scale }],
-                                        opacity,
-                                    },
-                                ]}
-                                resizeMode='contain'
-                            />
-                        </View>
-                    )}
                 </GestureHandlerRootView>
             </Theme>
         </TamaguiProvider>
@@ -103,17 +94,3 @@ function App(): React.JSX.Element {
 }
 
 export default App;
-
-const styles = StyleSheet.create({
-    splashBackground: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: '#112b66',
-    },
-    splashLogo: {
-        position: 'absolute',
-        width: '70%',
-        height: '20%',
-        top: '40%',
-        left: '15%',
-    },
-});

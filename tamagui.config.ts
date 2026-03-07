@@ -1,5 +1,5 @@
 import { config as baseConfig } from '@tamagui/config/v3';
-import { createTamagui, createTheme, createTokens } from 'tamagui';
+import { createFont, createTamagui, createTheme, createTokens } from 'tamagui';
 import { config, parseConfigObjectString, flattenTailwindCssColorsObject } from './src/utils/tamagui';
 
 const customColors = parseConfigObjectString(config('CUSTOM_COLORS', ''));
@@ -301,8 +301,39 @@ const tokens = createTokens({
     },
 });
 
+const rubikFont = createFont({
+    family: 'Rubik-Regular',
+    size: baseConfig.fonts.body.size,
+    lineHeight: baseConfig.fonts.body.lineHeight,
+    weight: {
+        1: '400',
+        2: '400',
+        3: '400',
+        4: '400',
+        5: '500',
+        6: '500',
+        7: '700',
+        8: '700',
+        9: '900',
+        10: '900',
+    },
+    letterSpacing: baseConfig.fonts.body.letterSpacing,
+    face: {
+        400: { normal: 'Rubik-Regular' },
+        500: { normal: 'Rubik-Medium' },
+        700: { normal: 'Rubik-Bold' },
+        900: { normal: 'Rubik-Black' },
+    },
+});
+
 const appConfig = createTamagui({
     ...baseConfig,
+    fonts: {
+        ...baseConfig.fonts,
+        body: rubikFont,
+        heading: rubikFont,
+    },
+    defaultFont: 'body',
     themes,
     tokens,
 });

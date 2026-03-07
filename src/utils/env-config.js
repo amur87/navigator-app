@@ -11,8 +11,43 @@ try {
 
 try {
     if (!isJest && platform !== 'web') {
+        let reactNativeModule = null;
+        try {
+            reactNativeModule = require('react-native');
+        } catch (reactNativeImportError) {
+            reactNativeModule = null;
+        }
+
         const loaded = require('react-native-config');
-        EnvConfig = loaded?.default ?? loaded ?? {};
+        const directConfig = loaded?.Config;
+        const defaultConfig = loaded?.default;
+        EnvConfig = directConfig ?? defaultConfig ?? loaded ?? {};
+
+        if (!Object.keys(EnvConfig).length) {
+            const nativeConfigFromBridge = reactNativeModule?.NativeModules?.RNCConfigModule?.getConfig?.()?.config;
+            if (nativeConfigFromBridge && Object.keys(nativeConfigFromBridge).length) {
+                EnvConfig = nativeConfigFromBridge;
+            }
+        }
+
+        if (!Object.keys(EnvConfig).length) {
+            const matrixNativeConfig = reactNativeModule?.NativeModules?.MatrixConfigModule?.getConfig?.();
+            if (matrixNativeConfig && Object.keys(matrixNativeConfig).length) {
+                EnvConfig = matrixNativeConfig;
+            }
+        }
+
+        if (!Object.keys(EnvConfig).length) {
+            try {
+                const nativeConfigModule = require('react-native-config/codegen/NativeConfigModule')?.default;
+                const nativeConfig = nativeConfigModule?.getConfig?.()?.config;
+                if (nativeConfig && Object.keys(nativeConfig).length) {
+                    EnvConfig = nativeConfig;
+                }
+            } catch (nativeModuleError) {
+                // ignore and keep fallback path below
+            }
+        }
     } else {
         EnvConfig = typeof process !== 'undefined' ? process.env ?? {} : {};
     }

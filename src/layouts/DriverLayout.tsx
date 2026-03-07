@@ -1,76 +1,119 @@
-import React, { useEffect, useRef } from 'react';
-import { View, TouchableOpacity, StyleSheet, Animated } from 'react-native';
-import { BlurView } from '@react-native-community/blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Pressable, StyleSheet, Animated, Platform } from 'react-native';
 import { Theme, Text } from 'tamagui';
-import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
-import {
-    faHouse,
-    faClipboardList,
-    faMessage,
-    faCircleUser,
-} from '@fortawesome/free-solid-svg-icons';
+import Svg, { Path } from 'react-native-svg';
+import { BlurView } from '@react-native-community/blur';
 import { later } from '../utils';
 import { useNotification } from '../contexts/NotificationContext';
 import { useChat } from '../contexts/ChatContext';
 import { useOrderManager } from '../contexts/OrderManagerContext';
-import { useLanguage } from '../contexts/LanguageContext';
 import useFleetbase from '../hooks/use-fleetbase';
 import useAppTheme from '../hooks/use-app-theme';
+import { getMaterialRipple } from '../utils/material-ripple';
 
 const ACCENT = '#991A4E';
-const INACTIVE_DARK = '#8e8e93';
-const INACTIVE_LIGHT = '#7a7a7a';
-const TAB_BAR_HEIGHT = 72;
-const TAB_COUNT = 4;
+const BADGE_ACCENT = '#991A4E';
+const BRAND_BLUE = '#112b66';
+const INACTIVE = 'rgba(17,43,102,0.72)';
+const TAB_BAR_HEIGHT = 68;
+const TAB_BAR_RADIUS = 26;
+
+const TabIcon = ({ type, color }: { type: 'home' | 'orders' | 'chat' | 'account'; color: string }) => {
+    let d = '';
+    if (type === 'home') {
+        d = 'M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z';
+    } else if (type === 'orders') {
+        d = 'M20 7H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm0 12H4V9h16v10zM4 3h16v2H4z';
+    } else if (type === 'chat') {
+        d = 'M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z';
+    } else if (type === 'account') {
+        d = 'M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v3h20v-3c0-3.3-6.7-5-10-5z';
+    }
+
+    return (
+        <Svg width={22} height={22} viewBox="0 0 24 24">
+            <Path d={d} fill={color} />
+        </Svg>
+    );
+};
 
 const NAV_ITEMS = [
-    { tab: 'DriverDashboardTab', icon: faHouse,         translationKey: 'DriverMenu.home'    },
-    { tab: 'DriverTaskTab',      icon: faClipboardList, translationKey: 'DriverMenu.orders'  },
-    { tab: 'DriverChatTab',      icon: faMessage,       translationKey: 'DriverMenu.chat'    },
-    { tab: 'DriverAccountTab',   icon: faCircleUser,    translationKey: 'DriverMenu.account' },
+    { tab: 'DriverDashboardTab', icon: 'home', label: '\u0413\u043b\u0430\u0432\u043d\u0430\u044f' },
+    { tab: 'DriverTaskTab', icon: 'orders', label: '\u0417\u0430\u043a\u0430\u0437\u044b' },
+    { tab: 'DriverChatTab', icon: 'chat', label: '\u0427\u0430\u0442' },
+    { tab: 'DriverAccountTab', icon: 'account', label: '\u041f\u0440\u043e\u0444\u0438\u043b\u044c' },
 ];
+
+const getActiveRoute = (route) => {
+    if (!route) {
+        return null;
+    }
+
+    const nestedState = route.state;
+    if (!nestedState?.routes?.length) {
+        return route;
+    }
+
+    const nestedRoute = nestedState.routes[nestedState.index ?? 0];
+    return getActiveRoute(nestedRoute) ?? route;
+};
 
 const getCurrentScreen = (tabNavigation) => {
     const tabState = tabNavigation.getState?.();
     const currentTabRoute = tabState?.routes?.[tabState.index];
-    const stackState = currentTabRoute?.state;
-    const currentScreen = stackState?.routes?.[stackState.index];
+    const activeRoute = getActiveRoute(currentTabRoute);
+
     return {
         tabName: currentTabRoute?.name,
-        screenName: currentScreen?.name,
-        screenParams: currentScreen?.params,
+        screenName: activeRoute?.name,
+        screenParams: activeRoute?.params,
     };
 };
 
 const DriverLayout = ({ children, state, _descriptors, navigation: tabNavigation }) => {
-    const insets = useSafeAreaInsets();
     const { fleetbase } = useFleetbase();
     const { getChannel, unreadCount } = useChat();
     const { addNotificationListener, removeNotificationListener } = useNotification();
-    const { reloadActiveOrders, allActiveOrders } = useOrderManager();
-    const { appTheme, isDarkMode } = useAppTheme();
-    const { t } = useLanguage();
+    const { reloadActiveOrders } = useOrderManager();
+    const { appTheme } = useAppTheme();
 
     const currentIndex = state?.index ?? 0;
     const currentTab = state?.routes?.[currentIndex]?.name;
-    const bottomOffset = insets.bottom + 8;
+    const { screenName } = getCurrentScreen(tabNavigation);
+    const visibleItems = NAV_ITEMS.filter((item) => state?.routes?.some((route) => route.name === item.tab));
+    const [tabBarWidth, setTabBarWidth] = useState(0);
+    const indicatorX = useRef(new Animated.Value(0)).current;
+    const tabScales = useRef(NAV_ITEMS.map(() => new Animated.Value(1))).current;
+    const activeIndex = Math.max(0, visibleItems.findIndex((item) => item.tab === currentTab));
+    const tabWidth = tabBarWidth > 0 && visibleItems.length > 0 ? tabBarWidth / visibleItems.length : 0;
+    const shouldHideTabBar = currentTab === 'DriverChatTab' && screenName === 'ChatChannel';
 
-    // Animated indicator position
-    const indicatorAnim = useRef(new Animated.Value(currentIndex)).current;
     useEffect(() => {
-        Animated.spring(indicatorAnim, {
-            toValue: currentIndex,
-            useNativeDriver: false,
-            tension: 120,
-            friction: 14,
+        if (!tabWidth) { return; }
+
+        Animated.spring(indicatorX, {
+            toValue: activeIndex * tabWidth,
+            speed: 18,
+            bounciness: 5,
+            useNativeDriver: true,
         }).start();
-    }, [currentIndex, indicatorAnim]);
+    }, [activeIndex, indicatorX, tabWidth]);
 
     const getBadge = (tab) => {
-        if (tab === 'DriverTaskTab' && allActiveOrders.length > 0) { return allActiveOrders.length; }
+        if (tab === 'DriverChatTab' && currentTab === 'DriverChatTab') { return null; }
         if (tab === 'DriverChatTab' && unreadCount > 0) { return unreadCount; }
         return null;
+    };
+
+    const animateTabPress = (index: number) => {
+        const scale = tabScales[index];
+        if (!scale) { return; }
+
+        Animated.sequence([
+            Animated.timing(scale, { toValue: 0.85, duration: 80, useNativeDriver: true }),
+            Animated.timing(scale, { toValue: 1.06, duration: 100, useNativeDriver: true }),
+            Animated.timing(scale, { toValue: 1, duration: 100, useNativeDriver: true }),
+        ]).start();
     };
 
     // Push notification handler
@@ -88,11 +131,11 @@ const DriverLayout = ({ children, state, _descriptors, navigation: tabNavigation
                     const channel = await getChannel(chatChannelId);
                     const { tabName, screenName, screenParams } = getCurrentScreen(tabNavigation);
                     if (tabName !== 'DriverChatTab') {
-                        tabNavigation.navigate('DriverChatTab', { screen: 'ChatList' });
+                        tabNavigation.navigate('DriverChatTab', { screen: 'ChatHome' });
                     }
                     if (!(screenName === 'ChatChannel' && screenParams?.channel?.uuid === chatChannelId)) {
                         later(() => {
-                            tabNavigation.navigate('DriverChatTab', { screen: 'ChatChannel', params: { channel } });
+                            tabNavigation.navigate('DriverChatTab', { screen: 'ChatChannel', params: { channelId: channel?.id ?? chatChannelId } });
                         }, 100);
                     }
                 } catch (err) {
@@ -124,156 +167,210 @@ const DriverLayout = ({ children, state, _descriptors, navigation: tabNavigation
         return () => removeNotificationListener(handlePushNotification);
     }, [addNotificationListener, removeNotificationListener, fleetbase, tabNavigation, getChannel, reloadActiveOrders]);
 
-    const inactiveColor = isDarkMode ? INACTIVE_DARK : INACTIVE_LIGHT;
-    const glassBg = isDarkMode ? 'rgba(0,0,0,0.40)' : 'rgba(255,255,255,0.60)';
-    const borderColor = isDarkMode ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.07)';
-
     return (
         <Theme name={appTheme as any}>
-            <View style={{ flex: 1 }}>
-                {/* Screen content */}
-                <View style={{ flex: 1, paddingBottom: TAB_BAR_HEIGHT + bottomOffset }}>
+            <View style={styles.root}>
+                <View style={styles.content}>
                     {children}
                 </View>
 
-                {/* Floating glass tab bar */}
-                <View
-                    style={[
-                        styles.tabBar,
-                        { bottom: bottomOffset, borderColor },
-                    ]}
-                >
-                    {/* Frosted-glass background */}
-                    <BlurView
-                        blurType={isDarkMode ? 'dark' : 'light'}
-                        blurAmount={25}
-                        reducedTransparencyFallbackColor={glassBg}
-                        style={StyleSheet.absoluteFill}
-                    />
-
-                    {/* Semi-transparent overlay tint */}
+                {!shouldHideTabBar ? (
                     <View
-                        style={[StyleSheet.absoluteFill, { backgroundColor: glassBg, borderRadius: 24 }]}
-                        pointerEvents="none"
-                    />
+                        style={styles.tabBar}
+                        onLayout={(event) => setTabBarWidth(event.nativeEvent.layout.width)}
+                    >
+                        <View style={styles.tabBarGlassClip}>
+                            <BlurView
+                                style={styles.tabBarBlur}
+                                blurType={Platform.OS === 'ios' ? (appTheme === 'dark' ? 'dark' : 'light') : 'light'}
+                                blurAmount={Platform.OS === 'ios' ? 30 : 16}
+                                reducedTransparencyFallbackColor={Platform.OS === 'ios' ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.72)'}
+                            />
+                        </View>
+                        <View style={styles.tabBarGlassBase} />
+                        <View style={styles.tabBarMatte} />
+                        {visibleItems.length > 0 ? (
+                            <Animated.View
+                                pointerEvents="none"
+                                style={[
+                                    styles.activeGlass,
+                                    {
+                                        width: tabWidth > 12 ? tabWidth - 12 : tabWidth || `${100 / visibleItems.length}%`,
+                                        transform: [{ translateX: indicatorX }],
+                                    },
+                                ]}
+                            />
+                        ) : null}
+                        <View style={styles.tabsRow}>
+                            {visibleItems.map((item) => {
+                                const isActive = currentTab === item.tab;
+                                const badge = getBadge(item.tab);
+                                const color = isActive ? ACCENT : INACTIVE;
+                                const route = state?.routes?.find((tabRoute) => tabRoute.name === item.tab);
+                                const navItemIndex = NAV_ITEMS.findIndex((navItem) => navItem.tab === item.tab);
 
-                    {/* Animated accent indicator line */}
-                    <Animated.View
-                        style={[
-                            styles.indicator,
-                            {
-                                left: indicatorAnim.interpolate({
-                                    inputRange: [0, TAB_COUNT - 1],
-                                    outputRange: ['5.5%', `${(TAB_COUNT - 1) * 25 + 5.5}%`],
-                                }),
-                            },
-                        ]}
-                    />
-
-                    {/* Tab items */}
-                    {NAV_ITEMS.map((item, index) => {
-                        const isActive = currentTab === item.tab;
-                        const badge = getBadge(item.tab);
-                        const color = isActive ? ACCENT : inactiveColor;
-
-                        return (
-                            <TouchableOpacity
-                                key={item.tab}
-                                onPress={() => tabNavigation.navigate(item.tab)}
-                                style={styles.tabItem}
-                                activeOpacity={0.65}
-                            >
-                                <View style={styles.iconWrap}>
-                                    <FontAwesomeIcon icon={item.icon} size={24} color={color} />
-                                    {badge != null && (
-                                        <View style={styles.badge}>
-                                            <Text style={styles.badgeText}>
-                                                {badge > 99 ? '99+' : badge}
+                                return (
+                                    <Animated.View
+                                        key={item.tab}
+                                        style={[
+                                            styles.tabItem,
+                                            { transform: [{ scale: tabScales[navItemIndex] ?? 1 }] },
+                                        ]}
+                                    >
+                                        <Pressable
+                                            onPress={() => {
+                                                animateTabPress(navItemIndex);
+                                                if (!route) { return; }
+                                                const event = tabNavigation.emit({
+                                                    type: 'tabPress',
+                                                    target: route.key,
+                                                    canPreventDefault: true,
+                                                });
+                                                if (!isActive && !event.defaultPrevented) {
+                                                    tabNavigation.navigate(item.tab);
+                                                }
+                                            }}
+                                            style={styles.tabPressArea}
+                                            android_ripple={getMaterialRipple({ color: 'rgba(17,43,102,0.10)', foreground: true })}
+                                        >
+                                            {badge != null ? <View style={styles.badge} /> : null}
+                                            <View style={styles.iconWrap}>
+                                                <TabIcon type={item.icon as any} color={color} />
+                                            </View>
+                                            <Text
+                                                style={[
+                                                    styles.tabLabel,
+                                                    isActive ? styles.tabLabelActive : styles.tabLabelInactive,
+                                                ]}
+                                                color={color}
+                                            >
+                                                {item.label}
                                             </Text>
-                                        </View>
-                                    )}
-                                </View>
-                                <Text
-                                    style={[
-                                        styles.tabLabel,
-                                        {
-                                            color,
-                                            fontWeight: isActive ? '600' : '400',
-                                        },
-                                    ]}
-                                >
-                                    {t(item.translationKey)}
-                                </Text>
-                            </TouchableOpacity>
-                        );
-                    })}
-                </View>
+                                        </Pressable>
+                                    </Animated.View>
+                                );
+                            })}
+                        </View>
+                    </View>
+                ) : null}
             </View>
         </Theme>
     );
 };
 
 const styles = StyleSheet.create({
+    root: {
+        flex: 1,
+    },
+    content: {
+        flex: 1,
+    },
     tabBar: {
         position: 'absolute',
-        left: 16,
-        right: 16,
+        left: 12,
+        right: 12,
+        bottom: 12,
         height: TAB_BAR_HEIGHT,
-        borderRadius: 24,
-        borderWidth: 1,
+        borderRadius: TAB_BAR_RADIUS,
+        overflow: 'hidden',
+        backgroundColor: 'transparent',
+        shadowColor: '#101522',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: Platform.OS === 'ios' ? 0.14 : 0.08,
+        shadowRadius: Platform.OS === 'ios' ? 24 : 16,
+        elevation: Platform.OS === 'android' ? 6 : 0,
+    },
+    tabBarGlassClip: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: TAB_BAR_RADIUS,
+        overflow: 'hidden',
+    },
+    tabBarBlur: {
+        ...StyleSheet.absoluteFillObject,
+    },
+    tabBarGlassBase: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: TAB_BAR_RADIUS,
+        backgroundColor: Platform.select({
+            ios: 'rgba(255,255,255,0.12)',
+            android: 'rgba(255,255,255,0.36)',
+            default: 'rgba(255,255,255,0.36)',
+        }),
+    },
+    tabBarMatte: {
+        ...StyleSheet.absoluteFillObject,
+        borderRadius: TAB_BAR_RADIUS,
+        backgroundColor: Platform.select({
+            ios: 'rgba(248,248,252,0.18)',
+            android: 'rgba(248,248,252,0.48)',
+            default: 'rgba(248,248,252,0.48)',
+        }),
+    },
+    activeGlass: {
+        position: 'absolute',
+        left: 7,
+        top: 7,
+        height: TAB_BAR_HEIGHT - 14,
+        borderRadius: 999,
+        backgroundColor: Platform.select({
+            ios: 'rgba(255,255,255,0.34)',
+            android: 'rgba(255,255,255,0.24)',
+            default: 'rgba(255,255,255,0.24)',
+        }),
+        shadowColor: 'rgba(255,255,255,0.9)',
+        shadowOffset: { width: 0, height: 0 },
+        shadowOpacity: Platform.OS === 'ios' ? 0.18 : 0.08,
+        shadowRadius: Platform.OS === 'ios' ? 16 : 8,
+        elevation: Platform.OS === 'android' ? 1 : 0,
+    },
+    tabsRow: {
+        position: 'relative',
+        zIndex: 2,
+        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        overflow: 'hidden',
-        elevation: 24,
-        shadowColor: '#000',
-        shadowOpacity: 0.30,
-        shadowRadius: 25,
-        shadowOffset: { width: 0, height: 10 },
-    },
-    indicator: {
-        position: 'absolute',
-        bottom: 8,
-        width: '14%',
-        height: 4,
-        backgroundColor: ACCENT,
-        borderRadius: 10,
-        zIndex: 10,
     },
     tabItem: {
         flex: 1,
+        height: '100%',
+    },
+    tabPressArea: {
+        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        paddingVertical: 8,
-        gap: 2,
+        gap: 3,
+        borderRadius: 999,
+        overflow: 'hidden',
     },
     iconWrap: {
-        position: 'relative',
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 1,
+        minWidth: 22,
+        minHeight: 22,
     },
     tabLabel: {
         fontSize: 10,
-        letterSpacing: 0.1,
+        fontWeight: '600',
+    },
+    tabLabelActive: {
+        fontWeight: '700',
+        opacity: 0.98,
+    },
+    tabLabelInactive: {
+        fontWeight: '600',
+        opacity: 0.9,
     },
     badge: {
         position: 'absolute',
-        top: -6,
-        right: -10,
-        backgroundColor: '#EF4444',
-        borderRadius: 9,
-        minWidth: 16,
-        height: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 3,
-        borderWidth: 1,
-        borderColor: 'rgba(0,0,0,0.20)',
-    },
-    badgeText: {
-        color: '#FFFFFF',
-        fontSize: 10,
-        fontWeight: '700',
+        top: 9,
+        right: 15,
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+        backgroundColor: BADGE_ACCENT,
+        borderWidth: 1.5,
+        borderColor: '#F2F2F7',
+        zIndex: 3,
     },
 });
 

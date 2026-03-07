@@ -1,23 +1,43 @@
-import { Text, YStack, Avatar } from 'tamagui';
-import { Platform } from 'react-native';
-import { abbreviateName } from '../utils';
+﻿import React from 'react';
+import { StyleSheet, View, Text } from 'react-native';
+import { Avatar } from 'tamagui';
 
-const ChatParticipantAvatar = ({ participant, size = '$5' }) => {
+const ChatParticipantAvatar = ({ participant, size = 44 }) => {
+    const fallback = `${participant?.avatarFallback ?? participant?.name ?? participant?.username ?? 'U'}`.slice(0, 1).toUpperCase();
+
     return (
-        <YStack position='relative'>
+        <View style={styles.wrap}>
             <Avatar circular size={size}>
-                <Avatar.Image accessibilityLabel={participant.name} src={participant.avatar_url} />
-                <Avatar.Fallback delayMs={800} backgroundColor='$primary' textAlign='center' alignItems='center' justifyContent='center'>
-                    <Text fontSize='$8' fontWeight='bold' color='$white' textTransform='uppercase' textAlign='center'>
-                        {abbreviateName(participant.name ?? participant.username)}
-                    </Text>
+                {participant?.avatarUrl ? <Avatar.Image accessibilityLabel={participant?.name ?? 'Chat avatar'} src={participant.avatarUrl} /> : null}
+                <Avatar.Fallback delayMs={0} backgroundColor='#d9e3ff' justifyContent='center' alignItems='center'>
+                    <Text style={[styles.fallbackText, { fontSize: Math.max(14, Math.round(size / 2.4)) }]}>{fallback}</Text>
                 </Avatar.Fallback>
             </Avatar>
-            {participant.is_online === true && (
-                <YStack position='absolute' top={0} right={0} bg='$successBorder' width={12} height={12} borderRadius={Platform.OS === 'android' ? 12 : '100%'} />
-            )}
-        </YStack>
+            {participant?.isOnline ? <View style={styles.onlineDot} /> : null}
+        </View>
     );
 };
 
+const styles = StyleSheet.create({
+    wrap: {
+        position: 'relative',
+    },
+    fallbackText: {
+        color: '#112b66',
+        fontFamily: 'Rubik-Bold',
+    },
+    onlineDot: {
+        position: 'absolute',
+        right: 1,
+        bottom: 1,
+        width: 11,
+        height: 11,
+        borderRadius: 6,
+        backgroundColor: '#34C759',
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
+    },
+});
+
 export default ChatParticipantAvatar;
+

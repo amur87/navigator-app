@@ -104,7 +104,7 @@ const CreateAccountScreen = ({ route }) => {
                 <YStack space="$4" width="100%" maxWidth={420}>
                     <YStack alignItems="center" space="$3">
                         <Image source={require('../../assets/logo_primary.png')} style={{ width: 180, height: 72, resizeMode: 'contain' }} />
-                        <Text color="#112b66" textAlign="center" fontSize={14} lineHeight={20} fontFamily={isCyrillic ? undefined : 'Rubik-Bold'} fontWeight="800">
+                        <Text color="#112b66" textAlign="center" fontSize={14} lineHeight={20} fontFamily='Rubik-Bold' fontWeight="800">
                             {t('Auth.CreateAccountScreen.title')}
                         </Text>
                     </YStack>
@@ -123,7 +123,7 @@ const CreateAccountScreen = ({ route }) => {
                             color="#112b66"
                             placeholderTextColor="rgba(17, 43, 102, 0.45)"
                             fontSize={17}
-                            fontFamily={isCyrillic ? undefined : 'Rubik-Bold'}
+                            fontFamily='Rubik-Bold'
                             fontWeight="700"
                             containerHeight={52}
                         />
@@ -144,7 +144,7 @@ const CreateAccountScreen = ({ route }) => {
                             inputColor="#112b66"
                             dialCodeColor="#112b66"
                             inputFontSize={18}
-                            inputFontFamily={isCyrillic ? undefined : 'Rubik-Bold'}
+                            inputFontFamily='Rubik-Bold'
                             inputFontWeight="800"
                             placeholderTextColor="rgba(17, 43, 102, 0.45)"
                             wrapperProps={{ space: '$2' }}
@@ -153,20 +153,20 @@ const CreateAccountScreen = ({ route }) => {
 
                     <Button size="$5" mt="$2" onPress={handleSendVerificationCode} bg="#112b66" width="100%" opacity={isSendingCode ? 0.75 : 1} disabled={isSendingCode} borderRadius={20} height={52}>
                         <Button.Icon>{isSendingCode ? <Spinner color="#FFFFFF" /> : <FontAwesomeIcon icon={faPaperPlane} color="#FFFFFF" />}</Button.Icon>
-                        <Button.Text color="#FFFFFF" fontWeight="700" fontFamily={isCyrillic ? undefined : 'Rubik-Bold'}>
+                        <Button.Text color="#FFFFFF" fontWeight="700" fontFamily='Rubik-Bold'>
                             {t('Auth.CreateAccountScreen.sendVerificationCodeButtonText')}
                         </Button.Text>
                     </Button>
 
                     <Button size="$5" onPress={handleLogin} bg="#F5F6FA" width="100%" opacity={isSendingCode ? 0.75 : 1} disabled={isSendingCode} borderRadius={20} borderWidth={1.5} borderColor="#D4D9E5" height={52}>
-                        <Button.Text color="#112b66" fontWeight="700" fontFamily={isCyrillic ? undefined : 'Rubik-Bold'}>
+                        <Button.Text color="#112b66" fontWeight="700" fontFamily='Rubik-Bold'>
                             {t('Auth.CreateAccountScreen.haveAccountLoginButtonText')}
                         </Button.Text>
                     </Button>
 
-                    <Text color="rgba(17, 43, 102, 0.7)" fontSize={12} textAlign="center" lineHeight={18} fontFamily={isCyrillic ? undefined : 'Rubik-Medium'}>
+                    <Text color="rgba(17, 43, 102, 0.7)" fontSize={12} textAlign="center" lineHeight={18} fontFamily='Rubik-Medium'>
                         {createCopy.privacyAgreementPrefix}{' '}
-                        <Text color="#112b66" textDecorationLine="underline" onPress={handleOpenPrivacyPolicy} fontFamily={isCyrillic ? undefined : 'Rubik-Medium'}>
+                        <Text color="#112b66" textDecorationLine="underline" onPress={handleOpenPrivacyPolicy} fontFamily='Rubik-Medium'>
                             {createCopy.privacyPolicyLinkText}
                         </Text>
                     </Text>

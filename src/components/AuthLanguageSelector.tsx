@@ -94,7 +94,7 @@ const AuthLanguageSelector = () => {
                                         bg={lang.code === language.code ? 'rgba(20,42,101,0.08)' : 'transparent'}
                                     >
                                         <Text fontSize={22}>{lang.emoji ?? '🏳️'}</Text>
-                                        <Text color="#142A65" fontFamily={isCyrillic ? undefined : 'Rubik-Medium'} fontSize={14}>
+                                        <Text color="#142A65" fontFamily='Rubik-Medium' fontSize={14}>
                                             {lang.displayName}
                                         </Text>
                                     </XStack>

@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { Pressable, FlatList, RefreshControl } from 'react-native';
+import { Pressable, FlatList, RefreshControl, StatusBar, View } from 'react-native';
 import { Text, YStack, XStack, Button, Separator, Image, useTheme } from 'tamagui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { singularize } from 'inflected';
@@ -16,6 +17,7 @@ import Badge from '../components/Badge';
 import Spacer from '../components/Spacer';
 import useStorage from '../hooks/use-storage';
 import useFleetbase from '../hooks/use-fleetbase';
+import GlassHeader from '../components/GlassHeader';
 
 const DriverReportScreen = () => {
     const theme = useTheme();
@@ -222,8 +224,13 @@ const DriverReportScreen = () => {
         }, [adapter, loadIssues, loadFuelReports])
     );
 
+    const insets = useSafeAreaInsets();
+    const topInset = Math.max(insets.top, 0);
+
     return (
-        <YStack flex={1} bg='$background'>
+        <View style={{ flex: 1, backgroundColor: theme.background?.val ?? '#F2F2F7' }}>
+            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+            <GlassHeader title="Отчеты" />
             <FlatList
                 data={content}
                 keyExtractor={(item, index) => `${item?.id ?? index}`}
@@ -231,6 +238,7 @@ const DriverReportScreen = () => {
                 refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={theme.primary.val} />}
                 ItemSeparatorComponent={() => <Separator borderBottomWidth={1} borderColor='$borderColor' />}
                 stickyHeaderIndices={[0]}
+                contentContainerStyle={{ paddingTop: topInset + 48 }}
                 ListHeaderComponent={
                     <YStack px='$2' pt='$4' bg='$background'>
                         <TabSwitch initialIndex={currentIndex} options={reportOptions} onTabChange={setCurrentTab} />
@@ -259,7 +267,7 @@ const DriverReportScreen = () => {
                     </Button>
                 </YStack>
             </YStack>
-        </YStack>
+        </View>
     );
 };
 

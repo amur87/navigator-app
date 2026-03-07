@@ -50,10 +50,10 @@ const LoginScreen = () => {
                         resizeMode: 'contain',
                     }}
                 />
-                <Text color="#112b66" fontFamily={isCyrillic ? undefined : 'Rubik-Black'} fontWeight="900" fontSize={20} mt="$3">
+                <Text color="#112b66" fontFamily='Rubik-Black' fontWeight="900" fontSize={20} mt="$3">
                     {loginCopy.welcomeTitle || t('Auth.LoginScreen.welcomeTitle')}
                 </Text>
-                <Text color="rgba(17,43,102,0.72)" fontFamily={isCyrillic ? undefined : 'Rubik-Medium'} fontSize={14} textAlign="center" mt="$2" px="$6">
+                <Text color="rgba(17,43,102,0.72)" fontFamily='Rubik-Medium' fontSize={14} textAlign="center" mt="$2" px="$6">
                     {loginCopy.chooseLanguage ||
                         t('Auth.LoginScreen.chooseLanguage', {
                             selectedLanguageName: loginCopy.selectedLanguageName,
@@ -77,7 +77,7 @@ const LoginScreen = () => {
                             >
                                 <Text
                                     color={selected ? '#FFFFFF' : '#112b66'}
-                                    fontFamily={lang.code === 'ru' || lang.code === 'ky' ? undefined : 'Rubik-Bold'}
+                                    fontFamily='Rubik-Bold'
                                     fontWeight="700"
                                     fontSize={14}
                                     numberOfLines={1}
@@ -102,7 +102,7 @@ const LoginScreen = () => {
                             height={52}
                             pressStyle={{ opacity: 0.9 }}
                         >
-                            <Text color="#112b66" fontFamily={isCyrillic ? undefined : 'Rubik-Bold'} fontWeight="700" fontSize={16}>
+                            <Text color="#112b66" fontFamily='Rubik-Bold' fontWeight="700" fontSize={16}>
                                 {loginCopy.registerButtonText || t('Auth.LoginScreen.registerButtonText')}
                             </Text>
                         </Button>
