@@ -29,7 +29,7 @@ export const LocationProvider = ({ children }) => {
     const { isOnline, driver, trackDriver } = useAuth();
     const { adapter } = useFleetbase();
     const [authToken] = useStorage('_driver_token');
-    const [location, setLocation] = useStorage(`${driver?.id ?? 'anon'}_location`, {});
+    const [location, setLocation] = useStorage('_driver_location', {});
     const [isTracking, setIsTracking] = useState(false);
     const [isResolvingLocation, setIsResolvingLocation] = useState(false);
     const [locationError, setLocationError] = useState(null);
@@ -150,14 +150,26 @@ export const LocationProvider = ({ children }) => {
         [location, adapter]
     );
 
-    // Get the HTTP configuration for background geolocation tracking
+    // Get the HTTP configuration for background geolocation tracking.
+    // Use refs so the config factory never changes identity — prevents the
+    // BGeo ready() effect from re-running on every render.
+    const adapterRef = useRef(adapter);
+    const driverRef = useRef(driver);
+    const authTokenRef = useRef(authToken);
+    useEffect(() => { adapterRef.current = adapter; }, [adapter]);
+    useEffect(() => { driverRef.current = driver; }, [driver]);
+    useEffect(() => { authTokenRef.current = authToken; }, [authToken]);
+
     const getHttpConfig = useCallback(() => {
-        if (!adapter || !driver || !authToken) return {};
+        const a = adapterRef.current;
+        const d = driverRef.current;
+        const t = authTokenRef.current;
+        if (!a || !d || !t) return {};
 
         return {
-            url: `${adapter.host}/${adapter.namespace}/drivers/${driver.id}/track`,
+            url: `${a.host}/${a.namespace}/drivers/${d.id}/track`,
             headers: {
-                Authorization: `Bearer ${authToken}`,
+                Authorization: `Bearer ${t}`,
                 'Content-Type': 'application/json',
                 'User-Agent': config('APP_NAME', 'Delivery Max'),
             },
@@ -165,7 +177,7 @@ export const LocationProvider = ({ children }) => {
             locationTemplate:
                 '{"latitude":<%= latitude %>,"longitude":<%= longitude %>,"heading":<%= heading %>,"speed":<%= speed %>,"altitude":<%= altitude %>,"timestamp":"<%= timestamp %>","activity":"<%= activity.type %>","is_moving":<%= is_moving %>,"battery":{"level":<%= battery.level %>,"is_charging":<%= battery.is_charging %>}}',
         };
-    }, [adapter, driver, authToken]);
+    }, []);
 
     // Callback to handle location updates.
     // Also sends GPS to backend (throttled to once per 15 s) as a complement
@@ -248,8 +260,10 @@ export const LocationProvider = ({ children }) => {
         };
     }, [startTracking]);
 
+    const bgeoReadyRef = useRef(false);
     useEffect(() => {
-        if (!driver || !hasTransistorsoftLicense) return;
+        if (!driver || !hasTransistorsoftLicense || bgeoReadyRef.current) return;
+        bgeoReadyRef.current = true;
 
         BackgroundGeolocation.ready(
             {
@@ -284,11 +298,12 @@ export const LocationProvider = ({ children }) => {
         // Subscribe to motion and activity events.
         BackgroundGeolocation.onMotionChange(onMotionChange);
 
-        // Clean up the listener when unmounting.
         return () => {
             BackgroundGeolocation.removeListeners();
+            bgeoReadyRef.current = false;
         };
-    }, [driver, getHttpConfig, hasTransistorsoftLicense, onLocation, onLocationError, onMotionChange, startTracking]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [driver?.id]);
 
     // Configure BackgroundFetch for periodic tasks.
     useEffect(() => {
@@ -332,7 +347,8 @@ export const LocationProvider = ({ children }) => {
         if (isEmpty(location) && driver && !geolocationUnavailableRef.current) {
             trackLocation({ force: true });
         }
-    }, [driver, isOnline, startTracking, stopTracking, trackLocation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [driver?.id, isOnline, startTracking, stopTracking, trackLocation]);
 
     // BackgroundGeolocation already delivers location via onLocation every
     // locationUpdateInterval (15 s).  A manual setInterval here would duplicate

@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { ScrollView, View, Text, Pressable, Linking, StyleSheet, Platform, StatusBar, Alert, TextInput } from 'react-native';
+import { ScrollView, View, Text, Pressable, StyleSheet, Platform, StatusBar } from 'react-native';
 import { Button, Spinner, Switch } from 'tamagui';
 import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -123,16 +123,16 @@ const DriverAccountScreen = () => {
         );
     }
 
-    const handleOpenTerms = async () => {
-        const url = 'https://www.fleetbase.io/terms';
-        const supported = await Linking.canOpenURL(url);
-        if (supported) await Linking.openURL(url);
+    const handleOpenTerms = () => {
+        navigation.navigate('TermsOfUse' as never);
     };
 
-    const handleOpenPrivacy = async () => {
-        const url = 'https://www.fleetbase.io/privacy-policy';
-        const supported = await Linking.canOpenURL(url);
-        if (supported) await Linking.openURL(url);
+    const handleOpenPrivacy = () => {
+        navigation.navigate('PrivacyPolicy' as never);
+    };
+
+    const handleOpenAbout = () => {
+        navigation.navigate('AboutApp' as never);
     };
 
     const handleSignout = () => {
@@ -324,7 +324,7 @@ const DriverAccountScreen = () => {
                             </View>
                         }
                     />
-                    <AccountRow icon={faInfoCircle} title="О приложении" value={`v${DeviceInfo.getVersion()} #${DeviceInfo.getBuildNumber()}`} showChevron={false} isLast />
+                    <AccountRow icon={faInfoCircle} title="О приложении" value={`v${DeviceInfo.getVersion()}`} onPress={handleOpenAbout} isLast />
                 </View>
 
                 <View style={styles.section}>

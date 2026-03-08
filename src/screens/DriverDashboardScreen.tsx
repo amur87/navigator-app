@@ -3,7 +3,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Easing, Image, PanResponder, Platform, Pressable, StatusBar, StyleSheet, Text, Vibration, View } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
-import MapView, { Marker, PROVIDER_GOOGLE, type MapStyleElement } from 'react-native-maps';
+import MapView, { Circle as MapCircle, Marker, PROVIDER_GOOGLE, type MapStyleElement } from 'react-native-maps';
 import MapViewDirections from 'react-native-maps-directions';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path } from 'react-native-svg';
@@ -119,7 +119,9 @@ const getDistanceLabel = (order: any) => (isSdkOrder(order) ? order.getAttribute
 const getEta = (order: any) => (isSdkOrder(order) ? order.getAttribute('meta.eta') : order?.meta?.eta) ?? '18 \u043c\u0438\u043d';
 const formatRadiusLabel = (meters: number) => (meters >= 1000 ? `${(meters / 1000).toFixed(meters % 1000 === 0 ? 0 : 1)} \u043a\u043c` : `${meters} \u043c`);
 const createSearchRegion = (coords: { latitude: number; longitude: number }, radiusMeters: number) => {
-    const latitudeDelta = Math.max((radiusMeters / 111320) * 2.45, DEFAULT_LAT_DELTA);
+    // Adaptive padding: circle fits with room for streets at 500m, wider at 5km
+    const padding = 0.93 + Math.min(radiusMeters / 5000, 1) * 0.13;
+    const latitudeDelta = Math.max((radiusMeters / 111320) * padding, DEFAULT_LAT_DELTA);
     const longitudeDelta = Math.max(latitudeDelta * 0.78, DEFAULT_LNG_DELTA);
 
     return {
@@ -332,8 +334,6 @@ const DriverDashboardScreen = () => {
     const sliderX = useRef(new Animated.Value(0)).current;
     const pulse = useRef(new Animated.Value(0)).current;
     const searchSpin = useRef(new Animated.Value(0)).current;
-    const searchSpinReverse = useRef(new Animated.Value(0)).current;
-    const searchPulse = useRef(new Animated.Value(0)).current;
     const mapRef = useRef<MapView | null>(null);
     const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -522,12 +522,7 @@ const DriverDashboardScreen = () => {
             Animated.timing(pulse, { toValue: 0, duration: 700, easing: Easing.in(Easing.quad), useNativeDriver: true }),
         ])).start();
         Animated.loop(Animated.timing(searchSpin, { toValue: 1, duration: 1000, easing: Easing.linear, useNativeDriver: true })).start();
-        Animated.loop(Animated.timing(searchSpinReverse, { toValue: 1, duration: 750, easing: Easing.linear, useNativeDriver: true })).start();
-        Animated.loop(Animated.sequence([
-            Animated.timing(searchPulse, { toValue: 1, duration: 1800, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-            Animated.timing(searchPulse, { toValue: 0, duration: 200, easing: Easing.linear, useNativeDriver: true }),
-        ])).start();
-    }, [pulse, searchPulse, searchSpin, searchSpinReverse]);
+    }, [pulse, searchSpin]);
 
     useEffect(() => {
         Animated.spring(sliderX, { toValue: isOnline ? maxX : 0, speed: 18, bounciness: 4, useNativeDriver: false }).start();
@@ -843,11 +838,6 @@ const DriverDashboardScreen = () => {
     const pulseScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 2.2] });
     const pulseOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.7, 0] });
     const searchRotation = searchSpin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-    const searchRotationReverse = searchSpinReverse.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-360deg'] });
-    const searchPulseScale = searchPulse.interpolate({ inputRange: [0, 1], outputRange: [0.42, 1.4] });
-    const searchPulseOpacity = searchPulse.interpolate({ inputRange: [0, 1], outputRange: [0.38, 0.02] });
-    const searchPulseScaleOuter = searchPulse.interpolate({ inputRange: [0, 1], outputRange: [0.68, 1.85] });
-    const searchPulseOpacityOuter = searchPulse.interpolate({ inputRange: [0, 1], outputRange: [0.2, 0] });
     const ringProgress = (countdown / ORDER_OFFER_SECONDS) * 113;
     const topInset = Math.max(insets.top, 0);
     const currentRadiusLabel = formatRadiusLabel(currentSearchRadius);
@@ -901,19 +891,24 @@ const DriverDashboardScreen = () => {
                     rotateEnabled={false}
                     onRegionChangeComplete={(region) => setMapRegion(region)}
                 >
+                    {hasRealLocation && showSearchVisuals ? (
+                        <MapCircle
+                            center={driverCoords}
+                            radius={currentSearchRadius * 0.2}
+                            strokeColor="rgba(153,26,78,0.25)"
+                            fillColor="rgba(153,26,78,0.03)"
+                            strokeWidth={1.5}
+                        />
+                    ) : null}
                     {hasRealLocation ? (
-                        <Marker coordinate={driverCoords} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={false}>
+                        <Marker coordinate={driverCoords} anchor={{ x: 0.5, y: 0.5 }} tracksViewChanges={showSearchVisuals}>
                             <View style={styles.driverMarkerWrap}>
-                                <Animated.View style={[styles.locationPulse, { opacity: pulseOpacity, transform: [{ scale: pulseScale }] }]} />
+                                <View style={styles.locationPulseStatic} />
                                 {showSearchVisuals ? (
-                                    <>
-                                        <Animated.View style={[styles.searchMapRingOuter, { opacity: searchPulseOpacityOuter, transform: [{ scale: searchPulseScaleOuter }] }]} />
-                                        <Animated.View style={[styles.searchMapRing, { opacity: searchPulseOpacity, transform: [{ scale: searchPulseScale }] }]} />
-                                        <View style={styles.searchRadiusBadge}>
-                                            <Text style={styles.searchRadiusBadgeValue}>{currentRadiusLabel}</Text>
-                                            <Text style={styles.searchRadiusBadgeLabel}>{'\u043f\u043e\u0438\u0441\u043a'}</Text>
-                                        </View>
-                                    </>
+                                    <View style={styles.searchRadiusBadge}>
+                                        <Text style={styles.searchRadiusBadgeValue}>{currentRadiusLabel}</Text>
+                                        <Text style={styles.searchRadiusBadgeLabel}>{'\u043f\u043e\u0438\u0441\u043a'}</Text>
+                                    </View>
                                 ) : null}
                                 <View style={styles.locationAvatarWrap}>
                                     {driverPhotoUrl ? (
@@ -926,12 +921,12 @@ const DriverDashboardScreen = () => {
                         </Marker>
                     ) : null}
                     {currentOrder && currentOrderPickup ? (
-                        <Marker coordinate={currentOrderPickup} anchor={{ x: 0.5, y: 1 }}>
+                        <Marker coordinate={currentOrderPickup} anchor={{ x: 0.5, y: 1 }} tracksViewChanges={false}>
                             <View style={styles.routePin}><View style={[styles.routePinDot, { backgroundColor: COLORS.navy }]}><Text style={styles.routePinText}>A</Text></View></View>
                         </Marker>
                     ) : null}
                     {currentOrder && currentOrderDropoff ? (
-                        <Marker coordinate={currentOrderDropoff} anchor={{ x: 0.5, y: 1 }}>
+                        <Marker coordinate={currentOrderDropoff} anchor={{ x: 0.5, y: 1 }} tracksViewChanges={false}>
                             <View style={styles.routePin}><View style={[styles.routePinDot, { backgroundColor: COLORS.primary }]}><Text style={styles.routePinText}>B</Text></View></View>
                         </Marker>
                     ) : null}
@@ -967,10 +962,10 @@ const DriverDashboardScreen = () => {
                             optimizeWaypoints
                         />
                     ) : null}
-                    {isOnline && !currentOrder ? mapNearbyOrders.filter((mo: any) => !dismissedIdsSet.has(getOrderId(mo.order))).map((mapOrder: any, index: number) => {
+                    {isOnline && !currentOrder ? offerQueue.map((mapOrder: any, index: number) => {
                         const isNearest = index === 0;
                         return (
-                            <Marker key={String(getOrderId(mapOrder.order))} coordinate={mapOrder.coords} anchor={{ x: 0.5, y: 1 }} onPress={() => showOrderOffer(mapOrder)}>
+                            <Marker key={String(getOrderId(mapOrder.order))} coordinate={mapOrder.coords} anchor={{ x: 0.5, y: 1 }} tracksViewChanges={false} onPress={() => showOrderOffer(mapOrder)}>
                                 <View style={[styles.pinCard, isNearest && styles.pinCardNearest]}><View style={[styles.pinIconWrap, isNearest && styles.pinIconWrapNearest]}><Svg width={14} height={14} viewBox="0 0 24 24"><Path fill={isNearest ? '#fff' : COLORS.primary} d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27z" /></Svg></View><View><Text style={[styles.pinId, isNearest && styles.pinIdNearest]}>#{getTracking(mapOrder.order)}</Text><Text style={[styles.pinPrice, isNearest && styles.pinPriceNearest]}>{getPriceLabel(mapOrder.order)}</Text><Text style={[styles.pinDistance, isNearest && styles.pinDistanceNearest]}>{mapOrder.distanceKm}</Text></View></View>
                             </Marker>
                         );
@@ -979,7 +974,7 @@ const DriverDashboardScreen = () => {
                         const coords = getCoords(order);
                         if (!coords) return null;
                         return (
-                            <Marker key={`active-${getOrderId(order)}`} coordinate={coords} anchor={{ x: 0.5, y: 1 }} onPress={() => openOrderScreen(order, 'Order')}>
+                            <Marker key={`active-${getOrderId(order)}`} coordinate={coords} anchor={{ x: 0.5, y: 1 }} tracksViewChanges={false} onPress={() => openOrderScreen(order, 'Order')}>
                                 <View style={styles.routePin}><View style={[styles.routePinDot, { backgroundColor: COLORS.navy }]}><Text style={styles.routePinText}>A</Text></View></View>
                             </Marker>
                         );
@@ -995,9 +990,13 @@ const DriverDashboardScreen = () => {
                     </View>
                 ) : null}
                 <Pressable style={[styles.locateMeBtn, { top: topInset + (weather ? 108 : 58) }]} onPress={centerOnMe} android_ripple={lightRipple}>
-                    <Svg width={22} height={22} viewBox="0 0 24 24">
-                        <Path fill={COLORS.navy} d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
-                    </Svg>
+                    {!hasRealLocation && isResolvingLocation ? (
+                        <ActivityIndicator size="small" color={COLORS.navy} />
+                    ) : (
+                        <Svg width={22} height={22} viewBox="0 0 24 24">
+                            <Path fill={hasRealLocation ? COLORS.navy : COLORS.muted} d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
+                        </Svg>
+                    )}
                 </Pressable>
                 {!isOnline ? (
                     <View style={styles.homeWelcome}><View style={styles.welcomeCard}><LinearGradient colors={[COLORS.navy, COLORS.navyMid]} style={styles.welcomeAvatar}><Text style={styles.welcomeAvatarText}>{driverInitial}</Text></LinearGradient><Text style={styles.welcomeGreeting}>{'\u0414\u043e\u0431\u0440\u043e \u043f\u043e\u0436\u0430\u043b\u043e\u0432\u0430\u0442\u044c!'}</Text><Text style={styles.welcomeSub}>{'\u0412\u044b \u043d\u0435 \u043d\u0430 \u043b\u0438\u043d\u0438\u0438. \u0412\u044b\u0439\u0434\u0438\u0442\u0435 \u043d\u0430 \u043b\u0438\u043d\u0438\u044e, \u0447\u0442\u043e\u0431\u044b \u043d\u0430\u0447\u0430\u0442\u044c \u043f\u043e\u043b\u0443\u0447\u0430\u0442\u044c \u0437\u0430\u043a\u0430\u0437\u044b.'}</Text><View style={styles.welcomeStats}><View style={styles.welcomeStat}><Text style={styles.welcomeStatValue}>{248 + allActiveOrders.length}</Text><Text style={styles.welcomeStatLabel}>{'\u0414\u043e\u0441\u0442\u0430\u0432\u043e\u043a'}</Text></View><View style={styles.welcomeStat}><Text style={styles.welcomeStatValue}>4.9</Text><Text style={styles.welcomeStatLabel}>{'\u0420\u0435\u0439\u0442\u0438\u043d\u0433'}</Text></View><View style={styles.welcomeStat}><Text style={styles.welcomeStatValue}>3 200 \u0441</Text><Text style={styles.welcomeStatLabel}>{'\u0421\u0435\u0433\u043e\u0434\u043d\u044f'}</Text></View></View><Pressable style={({ pressed }) => [styles.welcomeCta, pressed && styles.welcomeCtaPressed]} onPress={goOnline} android_ripple={welcomeCtaRipple}><Svg width={18} height={18} viewBox="0 0 24 24"><Path fill="#fff" d="M8 5v14l11-7z" /></Svg><Text style={styles.welcomeCtaText}>{'\u041d\u0430\u0447\u0430\u0442\u044c \u0440\u0430\u0431\u043e\u0442\u0443'}</Text></Pressable><Text style={styles.welcomeHint}>{'\u0421\u0432\u0430\u0439\u043f\u043d\u0438\u0442\u0435 \u0441\u043b\u0430\u0439\u0434\u0435\u0440 \u0432\u043f\u0440\u0430\u0432\u043e'}</Text></View></View>
@@ -1140,11 +1139,9 @@ const styles = StyleSheet.create({
     supportBadgeText: { fontSize: 8, fontFamily: FONTS.bold, color: '#fff' },
     panel: { flex: 1 },
     mapBackground: { ...StyleSheet.absoluteFillObject },
-    driverMarkerWrap: { width: 180, height: 180, alignItems: 'center', justifyContent: 'center' },
-    locationPulse: { position: 'absolute', width: 60, height: 60, borderRadius: 30, backgroundColor: 'rgba(42,171,238,0.14)' },
-    searchMapRing: { position: 'absolute', width: 116, height: 116, borderRadius: 58, borderWidth: 2.5, borderColor: 'rgba(153,26,78,0.34)', backgroundColor: 'rgba(153,26,78,0.03)' },
-    searchMapRingOuter: { position: 'absolute', width: 156, height: 156, borderRadius: 78, borderWidth: 1.5, borderColor: 'rgba(153,26,78,0.22)' },
-    searchRadiusBadge: { position: 'absolute', minWidth: 62, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.94)', alignItems: 'center', justifyContent: 'center', shadowColor: COLORS.primary, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 4 },
+    driverMarkerWrap: { width: 90, height: 90, alignItems: 'center', justifyContent: 'center' },
+    locationPulseStatic: { position: 'absolute', width: 52, height: 52, borderRadius: 26, backgroundColor: 'rgba(42,171,238,0.12)' },
+    searchRadiusBadge: { position: 'absolute', top: 0, minWidth: 58, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.95)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 4, elevation: 3 },
     searchRadiusBadgeValue: { fontSize: 13, fontFamily: FONTS.black, color: COLORS.primary },
     searchRadiusBadgeLabel: { marginTop: 1, fontSize: 9, fontFamily: FONTS.medium, color: COLORS.muted, textTransform: 'uppercase' },
     locationAvatarWrap: { width: 36, height: 36, borderRadius: 18, borderWidth: 2.5, borderColor: COLORS.blue, overflow: 'hidden' },

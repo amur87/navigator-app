@@ -153,6 +153,10 @@ export const AuthProvider = ({ children }) => {
         didInitAuthRef.current = true;
 
         if (storedDriver) {
+            // Always start offline on fresh app launch
+            if (typeof storedDriver === 'object' && storedDriver !== null) {
+                storedDriver.online = false;
+            }
             setDriver(storedDriver);
             return;
         }

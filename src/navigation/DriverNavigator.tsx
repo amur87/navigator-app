@@ -40,6 +40,9 @@ import ChatHomeScreen from '../screens/ChatHomeScreen';
 import ChatChannelScreen from '../screens/ChatChannelScreen';
 import DriverProfileScreen from '../screens/DriverProfileScreen';
 import DriverAccountScreen from '../screens/DriverAccountScreen';
+import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
+import TermsOfUseScreen from '../screens/TermsOfUseScreen';
+import AboutAppScreen from '../screens/AboutAppScreen';
 import EditAccountPropertyScreen from '../screens/EditAccountPropertyScreen';
 import DriverLayout from '../layouts/DriverLayout';
 import useAppTheme from '../hooks/use-app-theme';
@@ -459,6 +462,30 @@ const DriverAccountTab = createNativeStackNavigator({
         },
         EditAccountProperty: {
             screen: EditAccountPropertyScreen,
+            options: () => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
+        PrivacyPolicy: {
+            screen: PrivacyPolicyScreen,
+            options: () => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
+        TermsOfUse: {
+            screen: TermsOfUseScreen,
+            options: () => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
+        AboutApp: {
+            screen: AboutAppScreen,
             options: () => {
                 return {
                     headerShown: false,
