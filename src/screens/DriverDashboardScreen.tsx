@@ -16,6 +16,7 @@ import { getDistance as getGeoDistance } from '../utils/location';
 import { getMaterialRipple } from '../utils/material-ripple';
 import { playNotificationSound } from '../utils/notification-sound';
 import { getCourierWorkflowStage, getCourierPrimaryAction, getOrderStatusLabel, TERMINAL_ORDER_STATUSES } from '../utils/order-workflow';
+import { canDriverGoOnline, getOnlineBlockMessage, getDriverStatusMeta } from '../utils/driver-status';
 import useStorage from '../hooks/use-storage';
 import { SEARCH_RADIUS_STORAGE_KEY } from './DriverAccountScreen';
 
@@ -274,9 +275,9 @@ const DriverDashboardScreen = () => {
         isResolvingLocation,
         hasRealLocation,
     } = useLocation();
-    const { isOnline, toggleOnline, driver } = useAuth();
+    const { isOnline, toggleOnline, driver, driverStatus: contextDriverStatus } = useAuth();
     const { unreadCount } = useChat();
-    const { allActiveOrders, nearbyOrders, reloadActiveOrders, reloadNearbyOrders, reloadCurrentOrders } = useOrderManager();
+    const { allActiveOrders, nearbyOrders, ordersToday, reloadActiveOrders, reloadNearbyOrders, reloadCurrentOrders } = useOrderManager();
     const [searchRadiusKm] = useStorage<number>(SEARCH_RADIUS_STORAGE_KEY, DEFAULT_SEARCH_RADIUS_KM);
     const maxDistanceKm = searchRadiusKm || DEFAULT_SEARCH_RADIUS_KM;
     const searchRadiusSteps = useMemo(() => buildSearchSteps(maxDistanceKm), [maxDistanceKm]);
@@ -367,6 +368,18 @@ const DriverDashboardScreen = () => {
     const driverName = driver?.getAttribute?.('name') ?? driver?.name ?? '\u0410';
     const driverInitial = String(driverName).slice(0, 1).toUpperCase();
     const driverPhotoUrl = driver?.getAttribute?.('photo_url') ?? driver?.photo_url ?? null;
+
+    const todayEarnings = useMemo(() => {
+        if (!ordersToday?.length) return 0;
+        return ordersToday.reduce((sum: number, order: any) => {
+            const status = String(isSdkOrder(order) ? order.getAttribute('status') : order?.status ?? '').toLowerCase();
+            if (status !== 'completed') return sum;
+            const rawPrice = isSdkOrder(order) ? order.getAttribute('meta.price') ?? order.getAttribute('cod_amount') : order?.meta?.price ?? order?.cod_amount;
+            const price = parseFloat(String(rawPrice ?? '0').replace(/[^\d.]/g, ''));
+            return sum + (Number.isFinite(price) ? price : 0);
+        }, 0);
+    }, [ordersToday]);
+
     const driverCoords = {
         latitude: location?.coords?.latitude ?? DEFAULT_LAT,
         longitude: location?.coords?.longitude ?? DEFAULT_LNG,
@@ -671,8 +684,18 @@ const DriverDashboardScreen = () => {
         };
     }, [clearSearchTimers, dismissOffer, foundOrder]);
 
+    const getDriverStatus = () => contextDriverStatus || 'active';
+
     const goOnline = useCallback(async () => {
         if (isOnline || isSwitching) return;
+
+        // Block if driver is not active (pending/inactive/blocked)
+        if (!canDriverGoOnline(contextDriverStatus)) {
+            const msg = getOnlineBlockMessage(contextDriverStatus, 'ru');
+            Alert.alert(msg.title, msg.message);
+            return;
+        }
+
         setIsSwitching(true);
         try {
             await startTracking();
@@ -689,7 +712,7 @@ const DriverDashboardScreen = () => {
         } finally {
             setIsSwitching(false);
         }
-    }, [isOnline, isSwitching, startTracking, toggleOnline]);
+    }, [isOnline, isSwitching, startTracking, toggleOnline, contextDriverStatus]);
 
     const goOffline = useCallback(async () => {
         if (!isOnline || isSwitching) return;
@@ -983,23 +1006,53 @@ const DriverDashboardScreen = () => {
                 {weather ? (
                     <View style={[styles.weatherChip, { top: topInset + 58 }]}>
                         <Text style={styles.weatherIcon}>{weather.icon}</Text>
-                        <View>
-                            <Text style={styles.weatherTemp}>{weather.temp > 0 ? '+' : ''}{weather.temp}{'\u00B0'}</Text>
-                            <Text style={styles.weatherDesc}>{weather.desc}</Text>
-                        </View>
+                        <Text style={styles.weatherTemp}>{weather.temp > 0 ? '+' : ''}{weather.temp}{'\u00B0'}</Text>
                     </View>
                 ) : null}
-                <Pressable style={[styles.locateMeBtn, { top: topInset + (weather ? 108 : 58) }]} onPress={centerOnMe} android_ripple={lightRipple}>
-                    {!hasRealLocation && isResolvingLocation ? (
-                        <ActivityIndicator size="small" color={COLORS.navy} />
-                    ) : (
-                        <Svg width={22} height={22} viewBox="0 0 24 24">
-                            <Path fill={hasRealLocation ? COLORS.navy : COLORS.muted} d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm8.94 3A8.994 8.994 0 0013 3.06V1h-2v2.06A8.994 8.994 0 003.06 11H1v2h2.06A8.994 8.994 0 0011 20.94V23h2v-2.06A8.994 8.994 0 0020.94 13H23v-2h-2.06zM12 19c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z" />
-                        </Svg>
-                    )}
-                </Pressable>
+                <View style={[styles.earningsChip, { top: topInset + 58 }]}>
+                    <Text style={styles.earningsIcon}>💰</Text>
+                    <Text style={styles.earningsAmount}>{todayEarnings.toLocaleString('ru-RU')} с</Text>
+                </View>
                 {!isOnline ? (
-                    <View style={styles.homeWelcome}><View style={styles.welcomeCard}><LinearGradient colors={[COLORS.navy, COLORS.navyMid]} style={styles.welcomeAvatar}><Text style={styles.welcomeAvatarText}>{driverInitial}</Text></LinearGradient><Text style={styles.welcomeGreeting}>{'\u0414\u043e\u0431\u0440\u043e \u043f\u043e\u0436\u0430\u043b\u043e\u0432\u0430\u0442\u044c!'}</Text><Text style={styles.welcomeSub}>{'\u0412\u044b \u043d\u0435 \u043d\u0430 \u043b\u0438\u043d\u0438\u0438. \u0412\u044b\u0439\u0434\u0438\u0442\u0435 \u043d\u0430 \u043b\u0438\u043d\u0438\u044e, \u0447\u0442\u043e\u0431\u044b \u043d\u0430\u0447\u0430\u0442\u044c \u043f\u043e\u043b\u0443\u0447\u0430\u0442\u044c \u0437\u0430\u043a\u0430\u0437\u044b.'}</Text><View style={styles.welcomeStats}><View style={styles.welcomeStat}><Text style={styles.welcomeStatValue}>{248 + allActiveOrders.length}</Text><Text style={styles.welcomeStatLabel}>{'\u0414\u043e\u0441\u0442\u0430\u0432\u043e\u043a'}</Text></View><View style={styles.welcomeStat}><Text style={styles.welcomeStatValue}>4.9</Text><Text style={styles.welcomeStatLabel}>{'\u0420\u0435\u0439\u0442\u0438\u043d\u0433'}</Text></View><View style={styles.welcomeStat}><Text style={styles.welcomeStatValue}>3 200 \u0441</Text><Text style={styles.welcomeStatLabel}>{'\u0421\u0435\u0433\u043e\u0434\u043d\u044f'}</Text></View></View><Pressable style={({ pressed }) => [styles.welcomeCta, pressed && styles.welcomeCtaPressed]} onPress={goOnline} android_ripple={welcomeCtaRipple}><Svg width={18} height={18} viewBox="0 0 24 24"><Path fill="#fff" d="M8 5v14l11-7z" /></Svg><Text style={styles.welcomeCtaText}>{'\u041d\u0430\u0447\u0430\u0442\u044c \u0440\u0430\u0431\u043e\u0442\u0443'}</Text></Pressable><Text style={styles.welcomeHint}>{'\u0421\u0432\u0430\u0439\u043f\u043d\u0438\u0442\u0435 \u0441\u043b\u0430\u0439\u0434\u0435\u0440 \u0432\u043f\u0440\u0430\u0432\u043e'}</Text></View></View>
+                    <View style={styles.homeWelcome}>
+                        <View style={styles.welcomeCard}>
+                            <LinearGradient colors={[COLORS.navy, COLORS.navyMid]} style={styles.welcomeAvatar}>
+                                <Text style={styles.welcomeAvatarText}>{driverInitial}</Text>
+                            </LinearGradient>
+                            <Text style={styles.welcomeGreeting}>{'\u0414\u043e\u0431\u0440\u043e \u043f\u043e\u0436\u0430\u043b\u043e\u0432\u0430\u0442\u044c!'}</Text>
+                            {!canDriverGoOnline(contextDriverStatus) ? (
+                                <>
+                                    <View style={styles.moderationBanner}>
+                                        <View style={styles.moderationIconRow}>
+                                            <Svg width={20} height={20} viewBox="0 0 24 24">
+                                                <Path fill={getDriverStatusMeta(contextDriverStatus).color} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                                            </Svg>
+                                            <Text style={styles.moderationTitle}>
+                                                {getDriverStatusMeta(contextDriverStatus).label.ru}
+                                            </Text>
+                                        </View>
+                                        <Text style={styles.moderationText}>
+                                            {getDriverStatusMeta(contextDriverStatus).description.ru}
+                                        </Text>
+                                    </View>
+                                </>
+                            ) : (
+                                <>
+                                    <Text style={styles.welcomeSub}>{'\u0412\u044b \u043d\u0435 \u043d\u0430 \u043b\u0438\u043d\u0438\u0438. \u0412\u044b\u0439\u0434\u0438\u0442\u0435 \u043d\u0430 \u043b\u0438\u043d\u0438\u044e, \u0447\u0442\u043e\u0431\u044b \u043d\u0430\u0447\u0430\u0442\u044c \u043f\u043e\u043b\u0443\u0447\u0430\u0442\u044c \u0437\u0430\u043a\u0430\u0437\u044b.'}</Text>
+                                    <View style={styles.welcomeStats}>
+                                        <View style={styles.welcomeStat}><Text style={styles.welcomeStatValue}>{248 + allActiveOrders.length}</Text><Text style={styles.welcomeStatLabel}>{'\u0414\u043e\u0441\u0442\u0430\u0432\u043e\u043a'}</Text></View>
+                                        <View style={styles.welcomeStat}><Text style={styles.welcomeStatValue}>4.9</Text><Text style={styles.welcomeStatLabel}>{'\u0420\u0435\u0439\u0442\u0438\u043d\u0433'}</Text></View>
+                                        <View style={styles.welcomeStat}><Text style={styles.welcomeStatValue}>3 200 {'\u0441'}</Text><Text style={styles.welcomeStatLabel}>{'\u0421\u0435\u0433\u043e\u0434\u043d\u044f'}</Text></View>
+                                    </View>
+                                    <Pressable style={({ pressed }) => [styles.welcomeCta, pressed && styles.welcomeCtaPressed]} onPress={goOnline} android_ripple={welcomeCtaRipple}>
+                                        <Svg width={18} height={18} viewBox="0 0 24 24"><Path fill="#fff" d="M8 5v14l11-7z" /></Svg>
+                                        <Text style={styles.welcomeCtaText}>{'\u041d\u0430\u0447\u0430\u0442\u044c \u0440\u0430\u0431\u043e\u0442\u0443'}</Text>
+                                    </Pressable>
+                                    <Text style={styles.welcomeHint}>{'\u0421\u0432\u0430\u0439\u043f\u043d\u0438\u0442\u0435 \u0441\u043b\u0430\u0439\u0434\u0435\u0440 \u0432\u043f\u0440\u0430\u0432\u043e'}</Text>
+                                </>
+                            )}
+                        </View>
+                    </View>
                 ) : null}
 
                 {/* search bar is rendered inside homeBottom below */}
@@ -1172,6 +1225,11 @@ const styles = StyleSheet.create({
     welcomeCtaPressed: { opacity: 0.96, transform: [{ scale: 0.985 }] },
     welcomeCtaText: { fontSize: 15, fontFamily: FONTS.bold, color: '#fff' },
     welcomeHint: { marginTop: 10, textAlign: 'center', fontSize: 11, fontFamily: FONTS.medium, color: COLORS.lightMuted },
+    moderationBanner: { width: '100%', backgroundColor: 'rgba(255,149,0,0.1)', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, marginTop: 4 },
+    moderationIconRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+    moderationTitle: { fontSize: 15, fontFamily: FONTS.bold, color: '#FF9500' },
+    moderationText: { fontSize: 13, lineHeight: 19, fontFamily: FONTS.regular, color: '#444', marginBottom: 6 },
+    moderationHint: { fontSize: 12, fontFamily: FONTS.medium, color: '#999' },
     searchBar: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.93)' },
     searchBarSpinner: { width: 24, height: 24, borderRadius: 12, borderWidth: 2.5, borderColor: 'rgba(153,26,78,0.15)', borderTopColor: COLORS.primary },
     searchBarInfo: { flex: 1 },
@@ -1239,11 +1297,12 @@ const styles = StyleSheet.create({
     routePin: { alignItems: 'center' },
     routePinDot: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 2.5, borderColor: '#fff', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 4, elevation: 4 },
     routePinText: { fontSize: 12, fontFamily: FONTS.black, color: '#fff' },
-    weatherChip: { position: 'absolute', right: 12, zIndex: 15, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.94)', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 6, elevation: 4 },
-    weatherIcon: { fontSize: 20 },
-    weatherTemp: { fontSize: 14, fontFamily: FONTS.bold, color: COLORS.text },
-    weatherDesc: { fontSize: 10, fontFamily: FONTS.medium, color: COLORS.muted },
-    locateMeBtn: { position: 'absolute', right: 12, zIndex: 15, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.94)', alignItems: 'center', justifyContent: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.15, shadowRadius: 6, elevation: 4, overflow: 'hidden' },
+    weatherChip: { position: 'absolute', left: 12, zIndex: 15, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: 'rgba(20,42,101,0.75)', backdropFilter: 'blur(12px)' },
+    weatherIcon: { fontSize: 16 },
+    weatherTemp: { fontSize: 13, fontFamily: FONTS.bold, color: '#FFFFFF' },
+    earningsChip: { position: 'absolute', right: 12, zIndex: 15, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: 'rgba(20,42,101,0.75)', backdropFilter: 'blur(12px)' },
+    earningsIcon: { fontSize: 14 },
+    earningsAmount: { fontSize: 13, fontFamily: FONTS.bold, color: '#FFFFFF' },
 });
 
 export default DriverDashboardScreen;

@@ -93,7 +93,8 @@ const PhoneLoginVerifyScreen = () => {
         try {
             setVerifyError(null);
             await verifyCode(normalizedCode);
-            navigation.reset({ index: 0, routes: [{ name: 'DriverNavigator' }] });
+            // Navigate via Boot which checks registration_completed meta
+            navigation.reset({ index: 0, routes: [{ name: 'Boot' }] });
         } catch (error) {
             const nextAttempts = attempts + 1;
             setAttempts(nextAttempts);

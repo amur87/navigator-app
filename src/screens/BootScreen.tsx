@@ -6,14 +6,18 @@ import { Spinner, XStack, YStack } from 'tamagui';
 import { useFocusEffect } from '@react-navigation/native';
 import { later } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
+import { storage } from '../hooks/use-storage';
+import useFleetbase from '../hooks/use-fleetbase';
 import BootSplash from 'react-native-bootsplash';
 import SetupWarningScreen from './SetupWarningScreen';
 
 const BootScreen = ({ route }) => {
     const params = route.params ?? {};
     const navigation = useNavigation();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, driver } = useAuth();
+    const { fleetbase, adapter } = useFleetbase();
     const [error, setError] = useState<Error | null>(null);
+    const didNavigateRef = useRef(false);
     const scale = useRef(new Animated.Value(0.82)).current;
     const { width: screenWidth } = useWindowDimensions();
     const logoWidth = Math.min(screenWidth - 48, 180);
@@ -21,23 +25,83 @@ const BootScreen = ({ route }) => {
     const backgroundColor = '#112b66';
     const locationEnabled = params.locationEnabled;
 
+    // Check if driver already has registration data (local checks + API fallback)
+    const checkRegistrationComplete = useCallback(async () => {
+        const getAttr = (key) => {
+            if (typeof driver?.getAttribute === 'function') return driver.getAttribute(key);
+            return driver?.[key];
+        };
+        const driverId = getAttr('id') || (storage.getMap('driver') as any)?.id;
+
+        // Check per-driver MMKV flag
+        if (driverId && storage.getBool(`registration_completed_${driverId}`)) {
+            return true;
+        }
+
+        // API check: reload driver to get vehicle info
+        if (adapter && driverId) {
+            try {
+                const freshDriver = await adapter.get(`drivers/${driverId}`);
+                const fd = freshDriver?.driver ?? freshDriver;
+                const hasVehicle = !!(fd?.vehicle_uuid || fd?.current_vehicle_uuid || fd?.vehicle
+                    || fd?.meta?.registration_completed || fd?.meta?.vehicle_uuid || fd?.meta?.vehicle_plate);
+                if (hasVehicle) {
+                    storage.setBool(`registration_completed_${driverId}`, true);
+                    return true;
+                }
+            } catch (err) {
+                console.warn('[BootScreen] API driver check failed (non-fatal):', err);
+            }
+
+            // Query vehicles assigned to this driver
+            try {
+                if (fleetbase) {
+                    const vehicles = await (fleetbase as any).vehicles.query({ driver_assigned_uuid: driverId, limit: 1 });
+                    const hasVehicles = vehicles && (Array.isArray(vehicles) ? vehicles.length > 0 : !!vehicles.length);
+                    if (hasVehicles) {
+                        storage.setBool(`registration_completed_${driverId}`, true);
+                        return true;
+                    }
+                }
+            } catch (err) {
+                console.warn('[BootScreen] vehicles.query check failed (non-fatal):', err);
+            }
+        }
+
+        return false;
+    }, [driver, adapter, fleetbase]);
+
     useFocusEffect(
         useCallback(() => {
+            // Prevent duplicate navigation from race conditions
+            // (e.g. driver state updates recreating checkRegistrationComplete)
+            if (didNavigateRef.current) return;
+
             const initializeNavigator = async () => {
+                if (didNavigateRef.current) return;
+                didNavigateRef.current = true;
+
                 try {
-                    later(() => {
-                        try {
-                            const targetRoute = isAuthenticated ? 'DriverNavigator' : 'Login';
-                            navigation.reset({
-                                index: 0,
-                                routes: [{ name: targetRoute }],
-                            });
-                        } catch (err) {
-                            console.warn('Failed to navigate to screen:', err);
+                    let targetRoute = 'Login';
+                    let targetParams: Record<string, any> | undefined;
+                    if (isAuthenticated) {
+                        const registrationDone = await checkRegistrationComplete();
+                        if (registrationDone) {
+                            targetRoute = 'DriverNavigator';
+                        } else {
+                            targetRoute = 'VehicleTypeSelect';
+                            const driverName = driver?.getAttribute?.('name') ?? driver?.name ?? '';
+                            const driverPhone = driver?.getAttribute?.('phone') ?? driver?.phone ?? '';
+                            targetParams = { name: driverName, phone: driverPhone };
                         }
-                    }, 0);
-                } catch (initializationError) {
-                    setError(initializationError);
+                    }
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: targetRoute, params: targetParams }],
+                    });
+                } catch (err) {
+                    didNavigateRef.current = false;
+                    console.warn('Failed to navigate to screen:', err);
                 } finally {
                     later(() => BootSplash.hide(), 300);
                 }
@@ -52,7 +116,6 @@ const BootScreen = ({ route }) => {
                 const finePermission = Platform.OS === 'ios' ? PERMISSIONS.IOS.LOCATION_WHEN_IN_USE : PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION;
                 const fineResult = await check(finePermission);
 
-                // On Android, users can grant only approximate location (coarse). That should not block app launch.
                 if (fineResult === RESULTS.GRANTED) {
                     initializeNavigator();
                 } else {
@@ -65,7 +128,6 @@ const BootScreen = ({ route }) => {
                     }
 
                     later(() => BootSplash.hide(), 300);
-                    // If the locationEnabled flag is set meaning not null or undefined then initialize navigator
                     if (locationEnabled !== undefined && locationEnabled !== null) {
                         initializeNavigator();
                     } else {
@@ -75,7 +137,10 @@ const BootScreen = ({ route }) => {
             };
 
             checkLocationPermission();
-        }, [navigation, isAuthenticated, locationEnabled])
+
+            // Reset guard when Boot screen regains focus (e.g. after logout)
+            return () => { didNavigateRef.current = false; };
+        }, [navigation, isAuthenticated, locationEnabled, checkRegistrationComplete])
     );
 
     useEffect(() => {

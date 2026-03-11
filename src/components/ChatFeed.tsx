@@ -1,4 +1,4 @@
-﻿import React, { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
+import React, { forwardRef, useImperativeHandle, useMemo, useRef } from 'react';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { format, isToday, isYesterday } from 'date-fns';
 import ChatMessage from './ChatMessage';
@@ -9,12 +9,12 @@ const getDateLabel = (value: string) => {
         return '';
     }
     if (isToday(date)) {
-        return 'Сегодня';
+        return 'СЕГОДНЯ';
     }
     if (isYesterday(date)) {
-        return 'Вчера';
+        return 'ВЧЕРА';
     }
-    return format(date, 'd MMMM');
+    return format(date, 'd MMMM').toUpperCase();
 };
 
 const flattenFeed = (feed = []) => {
@@ -50,7 +50,9 @@ const ChatFeed = forwardRef(({ channel, currentUserId }, ref) => {
                 if (item.type === 'date') {
                     return (
                         <View style={styles.dateWrap}>
-                            <Text style={styles.dateText}>{item.label}</Text>
+                            <View style={styles.datePill}>
+                                <Text style={styles.dateText}>{item.label}</Text>
+                            </View>
                         </View>
                     );
                 }
@@ -66,23 +68,25 @@ const ChatFeed = forwardRef(({ channel, currentUserId }, ref) => {
 
 const styles = StyleSheet.create({
     content: {
-        paddingTop: 8,
-        paddingBottom: 12,
+        paddingTop: 6,
+        paddingBottom: 8,
     },
     dateWrap: {
         alignItems: 'center',
-        marginVertical: 8,
+        marginVertical: 10,
+    },
+    datePill: {
+        paddingHorizontal: 14,
+        paddingVertical: 5,
+        borderRadius: 8,
+        backgroundColor: 'rgba(225,218,208,0.88)',
     },
     dateText: {
         fontSize: 11,
-        color: '#8e8e93',
-        fontFamily: 'Rubik-Regular',
-        backgroundColor: 'rgba(255,255,255,0.78)',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 999,
+        letterSpacing: 0.3,
+        color: '#54504a',
+        fontFamily: 'Rubik-Medium',
     },
 });
 
 export default ChatFeed;
-

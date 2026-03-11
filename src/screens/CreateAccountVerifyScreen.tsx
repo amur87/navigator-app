@@ -91,7 +91,7 @@ const CreateAccountVerifyScreen = ({ route }) => {
         try {
             setVerifyError(null);
             await verifyAccountCreation(phone, normalizedCode, { name, phone });
-            navigation.reset({ index: 0, routes: [{ name: 'DriverNavigator' }] });
+            navigation.reset({ index: 0, routes: [{ name: 'VehicleTypeSelect', params: { name, phone } }] });
         } catch (error) {
             const nextAttempts = attempts + 1;
             setAttempts(nextAttempts);

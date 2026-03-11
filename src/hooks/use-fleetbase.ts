@@ -59,7 +59,7 @@ const useFleetbase = () => {
 
     // Keep Authorization header in sync with the latest driver token.
     useEffect(() => {
-        if (!adapter?.axiosInstance?.defaults?.headers) {
+        if (!adapter) {
             return;
         }
 
@@ -68,7 +68,17 @@ const useFleetbase = () => {
         const publicKey = typeof key === 'string' ? key.trim() : '';
         const bearer = token ?? publicKey;
 
-        adapter.axiosInstance.defaults.headers.Authorization = `Bearer ${bearer}`;
+        // BrowserAdapter (fetch-based) uses setHeaders(); NodeAdapter/axios uses axiosInstance
+        if (typeof adapter.setHeaders === 'function') {
+            adapter.setHeaders({ Authorization: `Bearer ${bearer}` });
+        } else if (adapter.axiosInstance?.defaults?.headers) {
+            adapter.axiosInstance.defaults.headers.Authorization = `Bearer ${bearer}`;
+        }
+
+        // Also update headers directly if adapter stores them
+        if (adapter.headers && typeof adapter.headers === 'object') {
+            adapter.headers.Authorization = `Bearer ${bearer}`;
+        }
     }, [adapter, authToken, resolveConnectionConfig]);
 
     // Memoize the returned object to prevent unnecessary re-renders.

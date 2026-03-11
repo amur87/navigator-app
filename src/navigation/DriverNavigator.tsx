@@ -23,7 +23,6 @@ import { configCase } from '../utils/format';
 import { format } from 'date-fns';
 import { PortalHost } from '@gorhom/portal';
 import { useIsNotAuthenticated, useIsAuthenticated } from '../contexts/AuthContext';
-import { useTempStore } from '../contexts/TempStoreContext';
 import DriverDashboardScreen from '../screens/DriverDashboardScreen';
 import DriverOrderManagementScreen from '../screens/DriverOrderManagementScreen';
 import OrderScreen from '../screens/OrderScreen';
@@ -44,6 +43,13 @@ import PrivacyPolicyScreen from '../screens/PrivacyPolicyScreen';
 import TermsOfUseScreen from '../screens/TermsOfUseScreen';
 import AboutAppScreen from '../screens/AboutAppScreen';
 import EditAccountPropertyScreen from '../screens/EditAccountPropertyScreen';
+import ProfileDetailsScreen from '../screens/ProfileDetailsScreen';
+import SettingsScreen from '../screens/SettingsScreen';
+import BankDetailsScreen from '../screens/BankDetailsScreen';
+import ChangePhoneScreen from '../screens/ChangePhoneScreen';
+import InfoScreen from '../screens/InfoScreen';
+import PayoutsScreen from '../screens/PayoutsScreen';
+import BalanceScreen from '../screens/BalanceScreen';
 import DriverLayout from '../layouts/DriverLayout';
 import useAppTheme from '../hooks/use-app-theme';
 import DriverOnlineToggle from '../components/DriverOnlineToggle';
@@ -221,13 +227,13 @@ const DriverTaskTab = createNativeStackNavigator({
         OrderModal: {
             screen: OrderScreen,
             options: ({ route, navigation }) => {
-                const order = route.params.order;
+                const order = route.params?.order;
                 return {
                     presentation: 'modal',
                     headerTitle: '',
                     headerLeft: (props) => (
                         <Text color='$textPrimary' fontSize={20} fontWeight='bold' numberOfLines={1}>
-                            {order.id}
+                            {order?.id ?? ''}
                         </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
@@ -249,12 +255,12 @@ const DriverTaskTab = createNativeStackNavigator({
                     headerShown: true,
                     headerLeft: (props) => (
                         <Text color='$textPrimary' fontSize={20} fontWeight='bold' numberOfLines={1}>
-                            {entity.name ?? entity.tracking_number.tracking_number}
+                            {entity?.name ?? entity?.tracking_number?.tracking_number ?? ''}
                         </Text>
                     ),
                     headerRight: (props) => (
                         <XStack alignItems='center' space='$2'>
-                            <Badge status={entity.tracking_number.status_code.toLowerCase()} />
+                            <Badge status={(entity?.tracking_number?.status_code ?? '').toLowerCase()} />
                             <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />
                         </XStack>
                     ),
@@ -312,13 +318,16 @@ const DriverReportTab = createNativeStackNavigator({
             options: ({ route, navigation }) => {
                 const params = route.params || {};
                 const fuelReport = params.fuelReport;
+                const dateLabel = fuelReport?.created_at
+                    ? format(new Date(fuelReport.created_at), 'MMM dd, yyyy HH:mm')
+                    : '';
 
                 return {
                     presentation: 'modal',
                     headerTitle: '',
                     headerLeft: (props) => (
                             <Text color='$textPrimary' fontSize={18} fontWeight='bold' numberOfLines={1}>
-                                {I18n.t('DriverNavigator.editFuelReportFrom', { date: format(new Date(fuelReport.created_at), 'MMM dd, yyyy HH:mm') })}
+                                {I18n.t('DriverNavigator.editFuelReportFrom', { date: dateLabel })}
                             </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
@@ -332,16 +341,17 @@ const DriverReportTab = createNativeStackNavigator({
         FuelReport: {
             screen: FuelReportScreen,
             options: ({ route, navigation }) => {
-                const {
-                    store: { fuelReport },
-                } = useTempStore();
+                const fuelReport = route.params?.fuelReport;
+                const dateLabel = fuelReport?.created_at
+                    ? format(new Date(fuelReport.created_at), 'MMM dd, yyyy HH:mm')
+                    : '';
 
                 return {
                     presentation: 'modal',
                     headerTitle: '',
                     headerLeft: (props) => (
                         <Text color='$textPrimary' fontSize={18} fontWeight='bold' numberOfLines={1}>
-                            {format(new Date(fuelReport.created_at), 'MMM dd, yyyy HH:mm')}
+                            {dateLabel}
                         </Text>
                     ),
                     headerRight: (props) => <PortalHost name='FuelReportScreenHeaderRightPortal' />,
@@ -376,13 +386,16 @@ const DriverReportTab = createNativeStackNavigator({
             options: ({ route, navigation }) => {
                 const params = route.params || {};
                 const issue = params.issue;
+                const dateLabel = issue?.created_at
+                    ? format(new Date(issue.created_at), 'MMM dd, yyyy HH:mm')
+                    : '';
 
                 return {
                     presentation: 'modal',
                     headerTitle: '',
                     headerLeft: (props) => (
                             <Text color='$textPrimary' fontSize={18} fontWeight='bold' numberOfLines={1}>
-                                {I18n.t('DriverNavigator.editIssueFrom', { date: format(new Date(issue.created_at), 'MMM dd, yyyy HH:mm') })}
+                                {I18n.t('DriverNavigator.editIssueFrom', { date: dateLabel })}
                             </Text>
                     ),
                     headerRight: (props) => <HeaderButton icon={faTimes} onPress={() => navigation.goBack()} />,
@@ -396,16 +409,17 @@ const DriverReportTab = createNativeStackNavigator({
         Issue: {
             screen: IssueScreen,
             options: ({ route, navigation }) => {
-                const {
-                    store: { issue },
-                } = useTempStore();
+                const issue = route.params?.issue;
+                const dateLabel = issue?.created_at
+                    ? format(new Date(issue.created_at), 'MMM dd, yyyy HH:mm')
+                    : '';
 
                 return {
                     presentation: 'modal',
                     headerTitle: '',
                     headerLeft: (props) => (
                         <Text color='$textPrimary' fontSize={18} fontWeight='bold' numberOfLines={1}>
-                            {format(new Date(issue.created_at), 'MMM dd, yyyy HH:mm')}
+                            {dateLabel}
                         </Text>
                     ),
                     headerRight: (props) => <PortalHost name='IssueScreenHeaderRightPortal' />,
@@ -486,6 +500,62 @@ const DriverAccountTab = createNativeStackNavigator({
         },
         AboutApp: {
             screen: AboutAppScreen,
+            options: () => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
+        ProfileDetails: {
+            screen: ProfileDetailsScreen,
+            options: () => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
+        Settings: {
+            screen: SettingsScreen,
+            options: () => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
+        BankDetails: {
+            screen: BankDetailsScreen,
+            options: () => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
+        ChangePhone: {
+            screen: ChangePhoneScreen,
+            options: () => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
+        Info: {
+            screen: InfoScreen,
+            options: () => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
+        Payouts: {
+            screen: PayoutsScreen,
+            options: () => {
+                return {
+                    headerShown: false,
+                };
+            },
+        },
+        Balance: {
+            screen: BalanceScreen,
             options: () => {
                 return {
                     headerShown: false,

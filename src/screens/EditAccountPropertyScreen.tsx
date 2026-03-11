@@ -1,14 +1,15 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { SafeAreaView, Pressable, Keyboard, StyleSheet } from 'react-native';
-import { Spinner, Text, YStack, XStack, Button, useTheme } from 'tamagui';
+import { View, Pressable, Keyboard, StyleSheet, StatusBar } from 'react-native';
+import { Spinner, Text, YStack, XStack, Button } from 'tamagui';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { toast } from '@backpackapp-io/react-native-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { usePromiseWithLoading } from '../hooks/use-promise-with-loading';
-import BackButton from '../components/BackButton';
 import PhoneInput from '../components/PhoneInput';
 import Input from '../components/Input';
+import GlassHeader from '../components/GlassHeader';
 
 const RenderAccountProperty = ({ property, value, onChange }) => {
     return (
@@ -24,41 +25,34 @@ const RenderAccountProperty = ({ property, value, onChange }) => {
 
 const EditAccountPropertyScreen = ({ route }) => {
     const property = route.params?.property;
-    const theme = useTheme();
     const navigation = useNavigation<any>();
-    const { t, language } = useLanguage();
+    const insets = useSafeAreaInsets();
+    const { t } = useLanguage();
     const { driver, updateDriver } = useAuth();
-    const isCyrillic = language.code === 'ru' || language.code === 'ky';
     const { runWithLoading, isLoading } = usePromiseWithLoading();
+    const topInset = Math.max(insets.top, 0);
+
     const getDriverValue = useCallback(
         (key: string, fallback = '') => {
-            if (!driver) {
-                return fallback;
-            }
-
+            if (!driver) return fallback;
             if (typeof driver.getAttribute === 'function') {
                 return driver.getAttribute(key) ?? fallback;
             }
-
             return driver?.[key] ?? fallback;
         },
         [driver]
     );
-    const initialValue = useMemo(() => {
-        if (!driver || !property?.key) {
-            return '';
-        }
 
+    const initialValue = useMemo(() => {
+        if (!driver || !property?.key) return '';
         return getDriverValue(property.key, '');
     }, [driver, getDriverValue, property?.key]);
+
     const [value, setValue] = useState(initialValue);
     const mutated = value !== initialValue;
 
     const handleUpdateProperty = useCallback(async () => {
-        if (!property?.key) {
-            return;
-        }
-
+        if (!property?.key) return;
         try {
             await runWithLoading(updateDriver({ [property.key]: value }));
             toast.success(t('AccountScreen.propertyChangesSaved', { propertyName: property.name }));
@@ -68,36 +62,57 @@ const EditAccountPropertyScreen = ({ route }) => {
         }
     }, [navigation, property, runWithLoading, t, updateDriver, value]);
 
-    if (!property) {
-        return null;
-    }
+    if (!property) return null;
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: theme.background.val }}>
-            <YStack flex={1} bg='$background' space='$3' padding='$5'>
-                <XStack space='$3' alignItems='center' mb='$5'>
-                    <BackButton />
-                    <Text color='$textPrimary' fontWeight='bold' fontSize='$8' numberOfLines={1} fontFamily='Rubik-Bold'>
-                        {property.name}
-                    </Text>
-                </XStack>
-                <XStack width='100%'>
+        <View style={styles.screen}>
+            <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+            <GlassHeader title={property.name} />
+
+            <View style={[styles.content, { paddingTop: topInset + 48 + 20 }]}>
+                <View style={styles.inputWrap}>
                     <RenderAccountProperty property={property} value={value} onChange={setValue} />
-                </XStack>
-                <YStack flex={1} position='relative' width='100%'>
-                    <Pressable style={StyleSheet.absoluteFill} onPress={Keyboard.dismiss} pointerEvents='box-only' />
-                </YStack>
-                <XStack position='absolute' bottom={0} left={0} right={0} padding='$5'>
-                    <Button onPress={handleUpdateProperty} size='$5' bg='$primary' flex={1} opacity={mutated ? 1 : 0.75} disabled={!mutated}>
-                        <Button.Icon>{isLoading() && <Spinner color='$textPrimary' />}</Button.Icon>
-                        <Button.Text color='$textPrimary' fontWeight='bold' fontSize='$5' fontFamily='Rubik-Bold'>
+                </View>
+
+                <Pressable style={StyleSheet.absoluteFill} onPress={Keyboard.dismiss} pointerEvents='box-none' />
+
+                <View style={styles.buttonWrap}>
+                    <Button
+                        onPress={handleUpdateProperty}
+                        size='$5'
+                        bg='#112b66'
+                        width='100%'
+                        opacity={mutated ? 1 : 0.75}
+                        disabled={!mutated}
+                        borderRadius={20}
+                        height={52}
+                    >
+                        <Button.Icon>{isLoading() && <Spinner color='#FFFFFF' />}</Button.Icon>
+                        <Button.Text color='#FFFFFF' fontWeight='bold' fontSize='$5' fontFamily='Rubik-Bold'>
                             {t('common.save')}
                         </Button.Text>
                     </Button>
-                </XStack>
-            </YStack>
-        </SafeAreaView>
+                </View>
+            </View>
+        </View>
     );
 };
+
+const styles = StyleSheet.create({
+    screen: { flex: 1, backgroundColor: '#F2F2F7' },
+    content: {
+        flex: 1,
+        paddingHorizontal: 16,
+    },
+    inputWrap: {
+        width: '100%',
+    },
+    buttonWrap: {
+        position: 'absolute',
+        bottom: 32,
+        left: 16,
+        right: 16,
+    },
+});
 
 export default EditAccountPropertyScreen;

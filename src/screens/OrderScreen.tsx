@@ -233,6 +233,7 @@ const OrderScreen = ({ route }) => {
     const isTerminal = TERMINAL_ORDER_STATUSES.has(orderStatus);
     const canStartOrder = primaryAction?.key === 'start' && order.isNotStarted && !isTerminal && !isIncomingAdhoc;
     const canUpdateActivity = primaryAction?.key === 'update' && !isTerminal && !isIncomingAdhoc;
+    const canCancelOrder = !isTerminal && !isIncomingAdhoc && isAssigned;
     const isMultipleWaypointOrder = (order.getAttribute('payload.waypoints', []) ?? []).length > 0;
     const showLoadingOverlay = isLoading('activityUpdate');
 
@@ -362,6 +363,7 @@ const OrderScreen = ({ route }) => {
                                 updateOrder(updatedOrder);
                             } catch (err) {
                                 console.warn('Error updating order activity:', err);
+                                toast.error(err?.message ?? 'Ошибка при обновлении статуса');
                             }
                         },
                     },
@@ -377,6 +379,7 @@ const OrderScreen = ({ route }) => {
             activitySheetRef.current?.openBottomSheet();
         } catch (err) {
             console.warn('Error fetching next activity for order:', err);
+            toast.error(err?.message ?? 'Ошибка получения следующего действия');
         }
     }, [destination?.id, order, reloadOrder, runWithLoading, sendOrderActivityUpdate, updateOrder]);
 
@@ -407,6 +410,7 @@ const OrderScreen = ({ route }) => {
             }
         } catch (err) {
             console.warn('Error updating order activity:', err);
+            toast.error(err?.message ?? 'Ошибка при обновлении статуса');
         } finally {
             isUpdatingActivity.current = false;
             setActivityLoading(null);
@@ -414,6 +418,54 @@ const OrderScreen = ({ route }) => {
             activitySheetRef.current?.closeBottomSheet();
         }
     }, [order]);
+
+    const completeOrder = useCallback(async () => {
+        Alert.alert('Завершить заказ', 'Отметить заказ как выполненный?', [
+            { text: 'Отмена', style: 'cancel' },
+            {
+                text: 'Завершить',
+                onPress: async () => {
+                    try {
+                        const updatedOrder = await runWithLoading(order.complete(), 'completeOrder');
+                        updateOrder(updatedOrder);
+                        toast.success('Заказ завершён');
+                    } catch (err) {
+                        console.warn('Error completing order:', err);
+                        toast.error(err?.message ?? 'Ошибка при завершении заказа');
+                    }
+                },
+            },
+        ]);
+    }, [order, runWithLoading, updateOrder]);
+
+    const cancelOrder = useCallback(async () => {
+        Alert.alert('Отказаться от заказа', 'Заказ станет доступен для других курьеров.', [
+            { text: 'Нет', style: 'cancel' },
+            {
+                text: 'Отказаться',
+                style: 'destructive',
+                onPress: async () => {
+                    try {
+                        // Unassign driver so the order becomes available for others
+                        const result = await runWithLoading(
+                            adapter.put(`orders/${order.id}`, {
+                                driver_assigned_uuid: null,
+                                status: 'created',
+                            }),
+                            'cancelOrder'
+                        );
+                        const updatedOrder = new Order(result, adapter);
+                        updateOrder(updatedOrder);
+                        toast.success('Вы отказались от заказа');
+                        navigation.goBack();
+                    } catch (err) {
+                        console.warn('Error unassigning from order:', err);
+                        toast.error(err?.message ?? 'Ошибка при отказе от заказа');
+                    }
+                },
+            },
+        ]);
+    }, [order, adapter, runWithLoading, updateOrder, navigation]);
 
     const handleAdhocAccept = useCallback(async () => {
         Alert.alert('Принять заказ', 'Заказ будет закреплён за вами.', [
@@ -658,6 +710,18 @@ const OrderScreen = ({ route }) => {
                             </LinearGradient>
                         </Pressable>
                     ) : null}
+
+                    {canCancelOrder ? (
+                        <Pressable
+                            style={({ pressed }) => [styles.cancelButtonWrap, pressed && styles.buttonPressed]}
+                            onPress={cancelOrder}
+                            android_ripple={screenRipple}
+                        >
+                            <Text style={styles.cancelButtonText}>
+                                {isLoading('cancelOrder') ? 'Отказ...' : 'Отказаться от заказа'}
+                            </Text>
+                        </Pressable>
+                    ) : null}
                 </View>
 
                 {/* Order info */}
@@ -890,6 +954,14 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
     },
     dismissButtonText: { fontSize: 15, fontFamily: FONTS.bold, color: COLORS.textMuted },
+    cancelButtonWrap: {
+        height: 48, borderRadius: 16,
+        backgroundColor: 'rgba(255,59,48,0.08)',
+        alignItems: 'center', justifyContent: 'center',
+        marginTop: 8,
+        overflow: 'hidden',
+    },
+    cancelButtonText: { fontSize: 15, fontFamily: FONTS.bold, color: COLORS.red },
 
     // Info card
     infoCard: {
